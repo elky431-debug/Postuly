@@ -1,0 +1,19 @@
+# Postuly — Règles Cursor
+
+## Contexte
+SaaS français d'automatisation de candidatures d'emploi.
+Stack : FastAPI + Next.js + Supabase + Celery/Redis + Playwright + n8n.
+
+## Règles de code
+- **Python** : type hints partout, async/await pour les routes et I/O
+- **TypeScript** : strict, jamais de `any`
+- Commentaires en français
+- Secrets dans `.env`, jamais dans le code
+- Chaque service dans son fichier dans `backend/app/services/`
+- Tâches longues (scraping, envois) → Celery, jamais dans une route FastAPI
+- Pas de sur-engineering — MVP d'abord
+
+## Architecture
+- Backend : `/backend/app/` (api/, services/, models/, db/, tasks/)
+- Frontend : `/frontend/` (Next.js App Router)
+- Workflows : `/n8n/`
