@@ -37,6 +37,33 @@ class ProfileResponse(BaseModel):
     cv_score: Optional[int] = None
     created_at: Optional[datetime] = None
 
+    @field_validator("full_name", mode="before")
+    @classmethod
+    def coerce_full_name(cls, v: object) -> Optional[str]:
+        if v is None:
+            return None
+        s = str(v).strip()
+        return s if s else None
+
+    @field_validator("profile_type", mode="before")
+    @classmethod
+    def coerce_profile_type_read(cls, v: object) -> Optional[str]:
+        """Neutralise les valeurs hors schéma plutôt qu’un échec de sérialisation API."""
+        if v is None or v == "":
+            return None
+        s = str(v).strip()
+        if s in ("etudiant", "jeune_actif"):
+            return s
+        return None
+
+    @field_validator("cv_url", mode="before")
+    @classmethod
+    def coerce_cv_url(cls, v: object) -> Optional[str]:
+        if v is None or v == "":
+            return None
+        s = str(v).strip()
+        return s if s else None
+
     @field_validator("cv_score", mode="before")
     @classmethod
     def coerce_cv_score(cls, v: object) -> Optional[int]:

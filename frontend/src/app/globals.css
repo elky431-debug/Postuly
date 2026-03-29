@@ -23,6 +23,14 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Scrollbar discrète sur la zone principale blanche du dashboard */
+[data-dashboard] main ::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+}
+[data-dashboard] main ::-webkit-scrollbar-thumb:hover {
+  background: #a3a3a3;
+}
+
 /* Scrollbar personnalisée */
 ::-webkit-scrollbar {
   width: 6px;

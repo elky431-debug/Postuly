@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, ChevronRight } from "lucide-react";
+import { Check, ChevronRight, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type QuickStartStep = {
@@ -18,82 +18,72 @@ type QuickStartProps = {
 
 const ORANGE = "#F97316";
 
-/**
- * Bloc « Démarrage rapide » : bordure gauche orange, fond très pâle, étapes cliquables.
- */
+/** Bloc « Démarrage rapide » — carte blanche. */
 export function QuickStart({ steps, done, doneCount }: QuickStartProps) {
+  const pct = (doneCount / 3) * 100;
+
   return (
-    <div
-      className="rounded-xl border border-stone-200 bg-[#FFFBF7] shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]"
-      style={{ borderLeftWidth: 3, borderLeftColor: ORANGE }}
-    >
-      <div className="p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-stone-800">
-            Démarrage rapide
-          </h2>
-          <span className="rounded-lg bg-white/80 px-2 py-1 text-xs font-medium tabular-nums text-stone-500 ring-1 ring-stone-200/60">
-            {doneCount} / 3 étapes
-          </span>
+    <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 shrink-0" style={{ color: ORANGE }} strokeWidth={2} aria-hidden />
+          <h2 className="text-sm font-bold text-neutral-900">Démarrage rapide</h2>
         </div>
-
-        <div className="mb-5 h-0.5 overflow-hidden rounded-full bg-stone-200/80">
-          <div
-            className="h-full rounded-full transition-all duration-700 ease-out"
-            style={{
-              width: `${(doneCount / 3) * 100}%`,
-              backgroundColor: ORANGE,
-            }}
-          />
+        <div className="flex items-center gap-3">
+          <span className="text-xs tabular-nums text-neutral-500">{doneCount} / 3 étapes</span>
+          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-neutral-100">
+            <div
+              className="h-full rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${pct}%`, backgroundColor: ORANGE }}
+            />
+          </div>
         </div>
+      </div>
 
-        <ul className="flex flex-col gap-2">
-          {steps.map((step, i) => (
-            <li key={step.href}>
-              <Link
-                href={done[i] ? "#" : step.href}
-                onClick={(e) => {
-                  if (done[i]) e.preventDefault();
-                }}
+      <ul className="divide-y divide-neutral-100">
+        {steps.map((step, i) => (
+          <li key={step.href}>
+            <Link
+              href={done[i] ? "#" : step.href}
+              onClick={(e) => done[i] && e.preventDefault()}
+              className={cn(
+                "group -mx-1 flex items-center gap-3 rounded-lg px-4 py-3 transition-colors",
+                !done[i] && "hover:bg-neutral-50",
+                done[i] && "cursor-default opacity-90"
+              )}
+            >
+              <div
                 className={cn(
-                  "flex items-center gap-3 rounded-[10px] border border-stone-200/80 px-4 py-3 transition-colors duration-150",
-                  !done[i] && "hover:bg-stone-50",
-                  done[i] && "cursor-default bg-stone-100/40"
+                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold",
+                  done[i]
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-neutral-100 text-neutral-500"
                 )}
               >
-                <div
+                {done[i] ? <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> : i + 1}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p
                   className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                    done[i]
-                      ? "bg-green-50 text-green-600 ring-1 ring-green-200"
-                      : "bg-stone-100 text-stone-600 ring-1 ring-stone-200/80"
+                    "text-sm font-medium text-neutral-800",
+                    done[i] && "text-neutral-400 line-through"
                   )}
                 >
-                  {done[i] ? (
-                    <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                  ) : (
-                    <span className="tabular-nums">{i + 1}</span>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p
-                    className={cn(
-                      "text-sm font-semibold leading-tight text-stone-800",
-                      done[i] && "text-stone-400 line-through"
-                    )}
-                  >
-                    {step.label}
-                  </p>
-                  <p className="mt-0.5 truncate text-xs leading-relaxed text-stone-500">{step.desc}</p>
-                </div>
-                {!done[i] && (
-                  <ChevronRight className="h-4 w-4 shrink-0 text-stone-300" strokeWidth={2} aria-hidden />
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+                  {step.label}
+                </p>
+                <p className="mt-0.5 text-xs text-neutral-500">{step.desc}</p>
+              </div>
+              {!done[i] && (
+                <ChevronRight
+                  className="h-3.5 w-3.5 shrink-0 text-neutral-300 transition-transform group-hover:translate-x-0.5 group-hover:text-orange-500"
+                  strokeWidth={2}
+                  aria-hidden
+                />
+              )}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

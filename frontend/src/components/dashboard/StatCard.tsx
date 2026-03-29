@@ -3,74 +3,70 @@
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { useCountUp } from "@/hooks/useCountUp";
-import { StatSparkline } from "./StatSparkline";
+import { cn } from "@/lib/utils";
+import { Sparkline } from "./Sparkline";
 
 type StatCardProps = {
   label: string;
-  /** Valeur numérique pour l’animation CountUp */
   countTarget: number;
-  /** Si true, affiche le nombre animé suivi de « % » */
   isPercent?: boolean;
   accent: string;
-  iconTint: string;
-  iconBg: string;
   Icon: LucideIcon;
-  badge?: string;
+  sparkSeed: string;
+  hasTrendData?: boolean;
 };
 
-const cardShadow =
-  "shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]";
-const cardShadowHover =
-  "hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.04)]";
-
 /**
- * Carte KPI dashboard : bordure haute colorée, CountUp, sparkline, hover élévation légère.
+ * Carte KPI — fond blanc, bordure légère, CountUp.
  */
 export function StatCard({
   label,
   countTarget,
   isPercent,
   accent,
-  iconTint,
-  iconBg,
   Icon,
-  badge = "DÉBUT",
+  sparkSeed,
+  hasTrendData = false,
 }: StatCardProps) {
-  const animated = useCountUp(countTarget, 800);
+  const animated = useCountUp(countTarget, 1200);
 
   return (
     <motion.div
       initial={false}
       whileHover={{ y: -2 }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
-      className={`rounded-xl border border-stone-200 bg-white ${cardShadow} ${cardShadowHover} transition-shadow duration-200`}
-      style={{ borderTopWidth: 3, borderTopColor: accent }}
+      transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="group rounded-xl border border-neutral-200 bg-white p-5 shadow-sm transition-colors hover:border-neutral-300"
     >
-      <div className="p-5 pt-4">
-        <div className="flex w-full justify-end">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-stone-500">
-              {badge}
-            </span>
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-              style={{ backgroundColor: iconBg }}
-            >
-              <Icon className="h-5 w-5" style={{ color: iconTint }} strokeWidth={2} aria-hidden />
-            </div>
-          </div>
-        </div>
-
-        <p
-          className="mt-3 text-[36px] font-bold leading-none tracking-tight text-[#1C1917] tabular-nums"
-          style={{ fontVariantNumeric: "tabular-nums" }}
+      <div className="flex items-start justify-between gap-3">
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+          style={{ backgroundColor: `${accent}18` }}
         >
-          {isPercent ? `${animated}%` : animated}
-        </p>
-        <p className="mt-1 text-[13px] text-[#78716C]">{label}</p>
-
-        <StatSparkline accent={accent} />
+          <Icon className="h-[18px] w-[18px]" style={{ color: accent }} strokeWidth={2} aria-hidden />
+        </div>
+        <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-neutral-500">
+          Début
+        </span>
       </div>
+
+      <p
+        className="mt-4 text-[40px] font-extrabold leading-none tracking-tight text-neutral-900 tabular-nums"
+        style={{ fontVariantNumeric: "tabular-nums" }}
+      >
+        {isPercent ? `${animated}%` : animated}
+      </p>
+      <p className="mt-1 text-[13px] text-neutral-500">{label}</p>
+
+      <div className="mt-4">
+        <Sparkline accent={accent} seed={sparkSeed} />
+      </div>
+
+      <p
+        className={cn("mt-2 text-[11px] tabular-nums", !hasTrendData && "text-neutral-400")}
+        style={hasTrendData ? { color: accent } : undefined}
+      >
+        {hasTrendData ? "↑ +0% vs semaine dernière" : "— En attente de données"}
+      </p>
     </motion.div>
   );
 }

@@ -2,6 +2,26 @@
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  ArrowLeft,
+  BarChart2,
+  Briefcase,
+  Award,
+  Check,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  FileDown,
+  FileText,
+  Globe,
+  GraduationCap,
+  Heart,
+  Info,
+  Sparkles,
+  Upload,
+  User,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { draftFromParsed, emptyCvDraft, parsedFromDraft } from "@/lib/cv-form";
@@ -63,7 +83,16 @@ const ANALYSIS_STEPS = [
   "Finalisation du rapport…",
 ];
 
-const VERIFY_ICONS = ["👤", "📄", "💼", "🎓", "🏅", "🌐", "❤️"] as const;
+/** Icônes des étapes de vérification (ordre = VERIFY_LABELS). */
+const VERIFY_STEP_ICONS = [
+  User,
+  FileText,
+  Briefcase,
+  GraduationCap,
+  Award,
+  Globe,
+  Heart,
+] as const;
 
 const VERIFY_LABELS = [
   "Profil",
@@ -601,11 +630,11 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                 <section className="rounded-2xl border border-gray-100 bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-[inset_0_0_0_1px_rgba(254,106,46,0.06)]">
                   <div className="flex gap-4">
                     <span
-                      className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold text-white"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white"
                       style={{ background: CTA_GRAD }}
                       aria-hidden
                     >
-                      ✓
+                      <Check className="h-5 w-5" strokeWidth={2.5} />
                     </span>
                     <div className="min-w-0 flex-1 space-y-1">
                       <p className="text-sm font-semibold text-gray-900">CV déjà analysé</p>
@@ -619,9 +648,7 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                           onClick={() => onOpenCvDataFromHub?.()}
                           className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 shadow-sm transition-colors hover:border-orange-200 hover:bg-orange-50/60"
                         >
-                          <span className="text-base opacity-80" aria-hidden>
-                            📋
-                          </span>
+                          <ClipboardList className="h-4 w-4 shrink-0 opacity-80" strokeWidth={2} aria-hidden />
                           Voir les données du CV
                         </button>
                         <button
@@ -630,20 +657,8 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                           className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-shadow hover:shadow-lg"
                           style={{ background: CTA_GRAD }}
                         >
-                          <span className="text-base opacity-90" aria-hidden>
-                            📄
-                          </span>
+                          <Sparkles className="h-4 w-4 shrink-0 opacity-95" strokeWidth={2} aria-hidden />
                           Voir l’analyse de mon CV
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onNewCvAnalysisFromHub?.()}
-                          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
-                        >
-                          <span className="text-base opacity-70" aria-hidden>
-                            ⬆️
-                          </span>
-                          Analyser un nouveau CV
                         </button>
                       </div>
                     </div>
@@ -656,11 +671,11 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                 >
                   <div className="flex gap-4">
                     <span
-                      className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
                       style={{ background: "rgba(254,106,46,0.2)", color: "#9A3412" }}
                       aria-hidden
                     >
-                      ✓
+                      <Check className="h-5 w-5" strokeWidth={2.5} />
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-gray-900">Dossier validé</p>
@@ -681,7 +696,7 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                             onClick={() => onRestoreCoachFromCache?.()}
                             className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:bg-gray-50"
                           >
-                            <span aria-hidden>📄</span>
+                            <Sparkles className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
                             Voir l’analyse de mon CV
                           </button>
                         )}
@@ -707,6 +722,23 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
               )}
             </div>
           </div>
+
+          {/* Bouton flottant : nouvelle analyse CV (hors du flux pour rester en bas à droite de la fenêtre) */}
+          {coachResult && (
+            <button
+              type="button"
+              onClick={() => onNewCvAnalysisFromHub?.()}
+              className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2.5 rounded-full border border-gray-200 bg-white py-2.5 pl-2.5 pr-5 text-sm font-semibold text-slate-800 shadow-[0_4px_14px_rgba(15,23,42,0.12)] transition hover:border-orange-200 hover:bg-orange-50/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FE6A2E]/35"
+            >
+              <span
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700"
+                aria-hidden
+              >
+                <Upload className="h-4 w-4" strokeWidth={2.25} />
+              </span>
+              Analyser un nouveau CV
+            </button>
+          )}
         </>
       )}
 
@@ -746,9 +778,7 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
           className="text-sm px-5 py-3.5 rounded-2xl border flex items-start gap-3 shadow-sm"
           style={{ borderColor: "#6EE7B7", background: "#ECFDF5", color: "#065F46" }}
         >
-          <span className="text-lg leading-none shrink-0" aria-hidden>
-            ✓
-          </span>
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" strokeWidth={2} aria-hidden />
           <span className="font-medium">{uploadOk}</span>
         </div>
       )}
@@ -952,9 +982,7 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                 className="flex items-center gap-3 rounded-xl border px-4 py-4 flex-1 min-w-0"
                 style={{ borderColor: BD, background: ORANGE_LIGHT }}
               >
-                <span className="text-2xl shrink-0" aria-hidden>
-                  📄
-                </span>
+                <FileText className="h-8 w-8 shrink-0 text-[#FE6A2E]" strokeWidth={1.5} aria-hidden />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">
                     {fileLabel || "CV enregistré"}
@@ -996,11 +1024,11 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
             <div className="p-6 sm:p-8">
               <div className="flex gap-3">
                 <span
-                  className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg"
+                  className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full"
                   style={{ background: "#EDE9FE", color: "#5B21B6" }}
                   aria-hidden
                 >
-                  ✓
+                  <CheckCircle2 className="h-5 w-5" strokeWidth={2} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <h2
@@ -1019,7 +1047,7 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                     className="mt-5 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold text-white shadow-md hover:shadow-lg transition-shadow"
                     style={{ background: CTA_GRAD }}
                   >
-                    <span aria-hidden>📋</span>
+                    <ClipboardList className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
                     Voir les informations du CV
                   </button>
                 </div>
@@ -1040,11 +1068,11 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
             <div className="p-6 sm:p-8">
               <div className="flex gap-3">
                 <span
-                  className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg"
+                  className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full"
                   style={{ background: ORANGE_LIGHT, color: ORANGE }}
                   aria-hidden
                 >
-                  📊
+                  <BarChart2 className="h-5 w-5" strokeWidth={2} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <h2
@@ -1086,109 +1114,136 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
         flowStep === "verify" && (
         <section
           id="cv-verify-section"
-          className="rounded-2xl border bg-white shadow-sm overflow-hidden"
-          style={{ borderColor: BD, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}
+          className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-[0_4px_24px_-4px_rgba(15,23,42,0.08),0_12px_40px_-12px_rgba(254,106,46,0.1)]"
         >
-          <div className="h-1 w-full" style={{ background: CTA_GRAD }} aria-hidden />
-          <div className="p-6 sm:p-8">
+          <div className="h-1 w-full bg-gradient-to-r from-[#FE6A2E] to-[#FFB347]" aria-hidden />
+          <div className="bg-gradient-to-b from-stone-50/90 to-white px-5 pb-8 pt-6 sm:px-8 sm:pt-8">
           {cvDataEditFromHub && (
             <button
               type="button"
               onClick={() => onCancelCvDataEditFromHub?.()}
-              className="text-sm font-medium text-[#FE6A2E] hover:underline mb-5 transition-colors"
+              className="group mb-6 inline-flex items-center gap-2 text-sm font-medium text-neutral-600 transition-colors hover:text-[#FE6A2E]"
             >
-              ← Retour au résumé Mon CV
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" strokeWidth={2} aria-hidden />
+              Retour au résumé Mon CV
             </button>
           )}
-          <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-            <div>
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-1">
               <h2
-                className="text-lg font-bold text-gray-900"
+                className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl"
                 style={{ fontFamily: "var(--font-syne)" }}
               >
                 Vérifiez vos informations
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="max-w-xl text-sm leading-relaxed text-neutral-500">
                 L’IA a pré-rempli les champs ci-dessous. Corrige si besoin puis enregistre.
               </p>
             </div>
-            <div className="text-right text-xs text-gray-500">
-              <span className="font-semibold text-[#FE6A2E]">
-                {verifyStep + 1}/{VERIFY_LABELS.length}
-              </span>
-              <span className="block">
-                {Math.round(((verifyStep + 1) / VERIFY_LABELS.length) * 100)} % complété
-              </span>
+            <div className="flex shrink-0 items-center gap-3">
+              <div className="rounded-full border border-neutral-200/80 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 shadow-sm">
+                <span className="text-[#FE6A2E]">{verifyStep + 1}</span>
+                <span className="text-neutral-400"> / {VERIFY_LABELS.length}</span>
+              </div>
+              <div className="h-10 w-px bg-neutral-200" aria-hidden />
+              <div className="text-right">
+                <p className="text-2xl font-bold tabular-nums leading-none text-[#FE6A2E]" style={{ fontFamily: "var(--font-syne)" }}>
+                  {Math.round(((verifyStep + 1) / VERIFY_LABELS.length) * 100)}%
+                </p>
+                <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-neutral-400">
+                  complété
+                </p>
+              </div>
             </div>
           </div>
-          <div className="h-2 rounded-full bg-gray-100 mb-6 overflow-hidden">
+          <div className="mb-8 h-2 overflow-hidden rounded-full bg-neutral-100/90">
             <div
-              className="h-full rounded-full transition-all duration-300"
+              className="h-full rounded-full transition-all duration-500 ease-out"
               style={{
                 width: `${((verifyStep + 1) / VERIFY_LABELS.length) * 100}%`,
                 background: CTA_GRAD,
               }}
             />
           </div>
-          <div className="flex justify-between gap-1 mb-6 overflow-x-auto pb-1">
-            {VERIFY_LABELS.map((label, i) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => setVerifyStep(i)}
-                className={cn(
-                  "flex flex-col items-center gap-1 min-w-[52px] shrink-0 rounded-xl p-2 transition-colors",
-                  i === verifyStep
-                    ? "bg-orange-50 ring-2 ring-[#FE6A2E] ring-offset-2 ring-offset-white"
-                    : i < verifyStep
-                      ? "bg-green-50"
-                      : "bg-gray-50"
-                )}
-              >
-                <span className="text-lg" aria-hidden>
-                  {VERIFY_ICONS[i]}
-                </span>
-                <span className="text-[10px] text-center text-gray-600 leading-tight max-w-[56px]">
-                  {label}
-                </span>
-              </button>
-            ))}
+          <div className="mb-8 rounded-2xl border border-neutral-100 bg-white/70 p-2 shadow-inner sm:p-3">
+            <div className="flex gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:justify-between">
+            {VERIFY_LABELS.map((label, i) => {
+              const Icon = VERIFY_STEP_ICONS[i];
+              const done = i < verifyStep;
+              const active = i === verifyStep;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setVerifyStep(i)}
+                  className={cn(
+                    "flex min-w-[72px] shrink-0 flex-col items-center gap-2 rounded-xl px-2 py-3 transition-all duration-200 sm:min-w-0 sm:flex-1",
+                    active &&
+                      "bg-white shadow-md ring-1 ring-neutral-200/80 ring-offset-2 ring-offset-stone-50",
+                    done && !active && "bg-emerald-50/80 text-emerald-800",
+                    !done && !active && "bg-transparent text-neutral-400 hover:bg-neutral-50/80 hover:text-neutral-600"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
+                      active && "bg-gradient-to-br from-orange-50 to-amber-50 text-[#FE6A2E] shadow-sm",
+                      done && !active && "bg-emerald-100/80 text-emerald-700",
+                      !done && !active && "bg-neutral-100 text-neutral-400"
+                    )}
+                    aria-hidden
+                  >
+                    {done && !active ? (
+                      <Check className="h-5 w-5" strokeWidth={2.5} />
+                    ) : (
+                      <Icon className="h-5 w-5" strokeWidth={1.75} />
+                    )}
+                  </span>
+                  <span
+                    className={cn(
+                      "max-w-[4.5rem] text-center text-[10px] font-semibold leading-tight sm:max-w-none sm:text-[11px]",
+                      active && "text-neutral-900",
+                      done && !active && "text-emerald-800",
+                      !done && !active && "text-neutral-500"
+                    )}
+                  >
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+            </div>
           </div>
           {saveMessage && (
             <p
               className={cn(
-                "text-sm mb-4 px-3 py-2 rounded-lg",
-                saveStatus === "ok" && "bg-green-50 text-green-800",
-                saveStatus === "err" && "bg-red-50 text-red-800"
+                "mb-6 rounded-xl border px-4 py-3 text-sm",
+                saveStatus === "ok" && "border-emerald-200 bg-emerald-50/90 text-emerald-900",
+                saveStatus === "err" && "border-red-200 bg-red-50/90 text-red-900"
               )}
             >
               {saveMessage}
             </p>
           )}
-          <CvVerifyFormSteps step={verifyStep} draft={cvDraft} setDraft={setCvDraft} />
-          <div className="flex flex-wrap justify-between gap-3 mt-8 pt-6 border-t border-gray-100">
+          <div className="rounded-2xl border border-neutral-100 bg-white/90 p-5 shadow-sm sm:p-6">
+            <CvVerifyFormSteps step={verifyStep} draft={cvDraft} setDraft={setCvDraft} />
+          </div>
+          <div className="mt-8 flex flex-col gap-4 border-t border-neutral-100 pt-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <button
               type="button"
               disabled={verifyStep === 0}
               onClick={() => setVerifyStep((s) => Math.max(0, s - 1))}
-              className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition-colors hover:bg-neutral-50 disabled:pointer-events-none disabled:opacity-40"
             >
-              &lt; Précédent
+              <ChevronLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
+              Précédent
             </button>
-            <div className="flex flex-wrap gap-2 justify-end items-center">
-              <button
-                type="button"
-                disabled={saveStatus === "saving" || dossierValidating}
-                onClick={() => void saveCvForm()}
-                className="px-4 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50"
-              >
-                {saveStatus === "saving" ? "Enregistrement…" : "Sauvegarder"}
-              </button>
+            <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
               <button
                 type="button"
                 disabled={saveStatus === "saving" || dossierValidating}
                 onClick={() => void handleValidateDossier()}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-md hover:shadow-lg hover:opacity-[0.98] transition-all disabled:opacity-50"
+                className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:brightness-[1.02] disabled:opacity-50"
                 style={{ background: CTA_GRAD }}
               >
                 {dossierValidating ? "Validation…" : "Valider mon dossier"}
@@ -1198,10 +1253,10 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                   type="button"
                   disabled={dossierValidating}
                   onClick={() => setVerifyStep((s) => Math.min(VERIFY_LABELS.length - 1, s + 1))}
-                  className="px-5 py-2.5 rounded-xl text-sm font-semibold border-2 bg-white hover:bg-orange-50/80 disabled:opacity-40 transition-colors"
-                  style={{ borderColor: ORANGE, color: "#C2410C" }}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[#FE6A2E] bg-white px-5 py-2.5 text-sm font-semibold text-[#C2410C] transition-colors hover:bg-orange-50/90 disabled:opacity-40"
                 >
-                  Suivant &gt;
+                  Suivant
+                  <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </button>
               )}
             </div>
@@ -1275,7 +1330,7 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
               color: "#7C2D12",
             }}
           >
-            <span aria-hidden>ℹ️</span>
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-800/80" strokeWidth={2} aria-hidden />
             <p>
               <strong>Patience :</strong> l’analyse prend entre 40 secondes et 1 minute. Ne quitte pas la page
               pendant le traitement.
@@ -1436,9 +1491,7 @@ function ResultatsJobea(props: {
           onClick={() => window.print()}
           className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 shadow-sm transition-colors hover:border-orange-200 hover:bg-orange-50/50 print:hidden"
         >
-          <span aria-hidden className="text-base opacity-70">
-            📄
-          </span>
+          <FileDown className="h-4 w-4 opacity-80" strokeWidth={2} aria-hidden />
           Exporter en PDF
         </button>
       </div>

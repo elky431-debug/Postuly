@@ -21,7 +21,8 @@ async def get_current_user(authorization: str = Header(...)) -> dict:
     supabase: Client = get_supabase_admin()
 
     try:
-        user_response = supabase.auth.get_user(token)
+        # jwt= explicite (signature gotrue : get_user(jwt: Optional[str] = None))
+        user_response = supabase.auth.get_user(jwt=token)
         if not user_response or not user_response.user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

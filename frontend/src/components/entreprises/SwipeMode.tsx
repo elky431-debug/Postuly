@@ -1,0 +1,45 @@
+"use client";
+
+import { LayoutGrid, List } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+type ViewMode = "list" | "swipe";
+
+type SwipeModeProps = {
+  mode: ViewMode;
+  onModeChange: (m: ViewMode) => void;
+};
+
+/** Bascule Liste / Swipe (swipe = bientôt). */
+export function SwipeMode({ mode, onModeChange }: SwipeModeProps) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Vue</span>
+      <div className="inline-flex rounded-lg border border-[#2A2A2A] bg-[#141414] p-0.5">
+        <button
+          type="button"
+          onClick={() => onModeChange("list")}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+            mode === "list" ? "bg-[#2A2A2A] text-[#F5F5F5]" : "text-[#737373] hover:text-[#A3A3A3]"
+          )}
+        >
+          <List className="h-3.5 w-3.5" aria-hidden />
+          Liste
+        </button>
+        <button
+          type="button"
+          disabled
+          title="Bientôt disponible"
+          className="relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-[#525252]"
+        >
+          <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
+          Swipe
+          <span className="ml-1 rounded bg-[#F97316]/20 px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#F97316]">
+            Bientôt
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}

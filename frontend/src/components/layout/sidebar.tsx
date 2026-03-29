@@ -4,14 +4,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
-  Rocket,
   Columns3,
   FileText,
   Settings,
   LogOut,
-  RefreshCw,
-  Briefcase,
-  MessageSquare,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
@@ -21,12 +18,15 @@ const BORDER = "#E7E5E4";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, badge: null as string | null, disabled: false },
-  { name: "Campagnes", href: "/campaigns", icon: Rocket, badge: null, disabled: false },
   { name: "Kanban", href: "/kanban", icon: Columns3, badge: null, disabled: false },
+  {
+    name: "Entreprises",
+    href: "/dashboard/entreprises",
+    icon: Building2,
+    badge: null,
+    disabled: false,
+  },
   { name: "Mon CV", href: "/cv", icon: FileText, badge: null, disabled: false },
-  { name: "Relances", href: "/relances", icon: RefreshCw, badge: "Nouveau", disabled: false },
-  { name: "Offres", href: "/offres", icon: Briefcase, badge: "Nouveau", disabled: false },
-  { name: "Entretien", href: "/entretien", icon: MessageSquare, badge: "V2", disabled: true },
 ];
 
 export function Sidebar() {

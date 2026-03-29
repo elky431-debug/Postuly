@@ -110,6 +110,19 @@ ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_logs ENABLE ROW LEVEL SECURITY;
 
+-- Permet de relancer tout le script sans erreur 42710 (policy already exists)
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can view own campaigns" ON campaigns;
+DROP POLICY IF EXISTS "Users can insert own campaigns" ON campaigns;
+DROP POLICY IF EXISTS "Users can update own campaigns" ON campaigns;
+DROP POLICY IF EXISTS "Users can delete own campaigns" ON campaigns;
+DROP POLICY IF EXISTS "Users can view own applications" ON applications;
+DROP POLICY IF EXISTS "Users can update own applications" ON applications;
+DROP POLICY IF EXISTS "Users can view own email logs" ON email_logs;
+DROP POLICY IF EXISTS "Anyone can read companies" ON companies;
+DROP POLICY IF EXISTS "Anyone can read email contacts" ON email_contacts;
+
 -- Profiles : un user ne voit que son propre profil
 CREATE POLICY "Users can view own profile"
   ON profiles FOR SELECT

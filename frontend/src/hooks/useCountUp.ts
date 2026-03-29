@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from "react";
 
+/** Courbe ease-out proche de cubic-bezier(0.25, 0.46, 0.45, 0.94) */
+function easeOutQuart(t: number): number {
+  return 1 - (1 - t) ** 4;
+}
+
 /**
- * Anime un entier de 0 à `target` (ease-out cubique), durée par défaut 800 ms.
+ * Anime un entier de 0 à `target` (ease-out), durée par défaut 1200 ms.
  */
-export function useCountUp(target: number, durationMs = 800, resetKey = 0): number {
+export function useCountUp(target: number, durationMs = 1200, resetKey = 0): number {
   const [value, setValue] = useState(0);
 
   useEffect(() => {
@@ -15,7 +20,7 @@ export function useCountUp(target: number, durationMs = 800, resetKey = 0): numb
 
     function tick(now: number) {
       const t = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - (1 - t) ** 3;
+      const eased = easeOutQuart(t);
       setValue(Math.round(target * eased));
       if (t < 1) raf = requestAnimationFrame(tick);
     }

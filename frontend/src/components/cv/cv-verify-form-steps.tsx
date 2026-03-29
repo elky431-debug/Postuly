@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Plus, Trash2, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { CvFormDraft } from "@/lib/cv-form";
 import {
   emptyEducation,
@@ -10,6 +12,10 @@ import {
 import { fetchPostcodeForFrenchCity } from "@/lib/french-city-postcode";
 
 type SetDraft = React.Dispatch<React.SetStateAction<CvFormDraft>>;
+
+/** Champs texte — focus charte Postuly */
+const fieldClass =
+  "mt-1.5 w-full rounded-xl border border-neutral-200/90 bg-white px-3 py-2.5 text-sm text-neutral-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition placeholder:text-neutral-400 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-500/15";
 
 /** Étape profil : remplit le code postal via la BAN (data.gouv) quand la ville est saisie. */
 function PersonalInfoFields({ draft, setDraft }: { draft: CvFormDraft; setDraft: SetDraft }) {
@@ -49,15 +55,17 @@ function PersonalInfoFields({ draft, setDraft }: { draft: CvFormDraft; setDraft:
   }, [draft.personal.city, setDraft]);
 
   return (
-    <div className="space-y-4">
-      <h3 className="font-semibold text-gray-900">Informations personnelles</h3>
-      <p className="text-xs text-gray-500">
-        Renseignées par l’IA depuis ton CV — tu peux les corriger. Le code postal se remplit selon la
-        ville (France).
-      </p>
-      <div className="grid sm:grid-cols-2 gap-3 text-sm">
+    <div className="space-y-5">
+      <div className="space-y-1">
+        <h3 className="text-base font-semibold tracking-tight text-neutral-900">Informations personnelles</h3>
+        <p className="text-xs leading-relaxed text-neutral-500">
+          Renseignées par l’IA depuis ton CV — tu peux les corriger. Le code postal se remplit selon la
+          ville (France).
+        </p>
+      </div>
+      <div className="grid gap-4 text-sm sm:grid-cols-2">
         <label className="block sm:col-span-2">
-          <span className="text-xs font-medium text-gray-600">Nom complet</span>
+          <span className="text-xs font-medium text-neutral-600">Nom complet</span>
           <input
             type="text"
             value={draft.personal.full_name}
@@ -67,11 +75,11 @@ function PersonalInfoFields({ draft, setDraft }: { draft: CvFormDraft; setDraft:
                 personal: { ...d.personal, full_name: e.target.value },
               }))
             }
-            className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+            className={fieldClass}
           />
         </label>
         <label className="block sm:col-span-2">
-          <span className="text-xs font-medium text-gray-600">Adresse</span>
+          <span className="text-xs font-medium text-neutral-600">Adresse</span>
           <input
             type="text"
             value={draft.personal.address}
@@ -81,14 +89,14 @@ function PersonalInfoFields({ draft, setDraft }: { draft: CvFormDraft; setDraft:
                 personal: { ...d.personal, address: e.target.value },
               }))
             }
-            className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+            className={fieldClass}
           />
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-gray-600 inline-flex items-center gap-2">
+          <span className="inline-flex items-center gap-2 text-xs font-medium text-neutral-600">
             Code postal
             {postalBusy && (
-              <span className="text-[10px] font-normal text-orange-600 tabular-nums">…</span>
+              <span className="text-[10px] font-normal tabular-nums text-orange-600">…</span>
             )}
           </span>
           <input
@@ -102,11 +110,11 @@ function PersonalInfoFields({ draft, setDraft }: { draft: CvFormDraft; setDraft:
                 personal: { ...d.personal, postal_code: e.target.value },
               }))
             }
-            className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+            className={fieldClass}
           />
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-gray-600">Ville</span>
+          <span className="text-xs font-medium text-neutral-600">Ville</span>
           <input
             type="text"
             value={draft.personal.city}
@@ -116,27 +124,27 @@ function PersonalInfoFields({ draft, setDraft }: { draft: CvFormDraft; setDraft:
                 personal: { ...d.personal, city: e.target.value },
               }))
             }
-            className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+            className={fieldClass}
             placeholder="Ex. Versailles"
             autoComplete="address-level2"
           />
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-gray-600">Email</span>
+          <span className="text-xs font-medium text-neutral-600">Email</span>
           <input
             type="email"
             value={draft.email}
             onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))}
-            className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+            className={fieldClass}
           />
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-gray-600">Téléphone</span>
+          <span className="text-xs font-medium text-neutral-600">Téléphone</span>
           <input
             type="tel"
             value={draft.phone}
             onChange={(e) => setDraft((d) => ({ ...d, phone: e.target.value }))}
-            className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+            className={fieldClass}
           />
         </label>
       </div>
@@ -159,18 +167,20 @@ export function CvVerifyFormSteps(props: {
 
   if (step === 1) {
     return (
-      <div className="space-y-3">
-        <h3 className="font-semibold text-gray-900">Résumé professionnel</h3>
-        <p className="text-xs text-gray-500">
-          Texte d’accroche ou paragraphe « Profil » extrait par l’IA.
-        </p>
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold tracking-tight text-neutral-900">Résumé professionnel</h3>
+          <p className="text-xs leading-relaxed text-neutral-500">
+            Texte d’accroche ou paragraphe « Profil » extrait par l’IA.
+          </p>
+        </div>
         <textarea
           value={draft.professional_summary}
           onChange={(e) =>
             setDraft((d) => ({ ...d, professional_summary: e.target.value }))
           }
           rows={8}
-          className="w-full rounded-xl border border-gray-200 p-3 text-sm text-gray-800"
+          className={cn(fieldClass, "mt-0 min-h-[10rem] resize-y")}
           placeholder="Ex. Étudiant motivé, rigueur et sens du service client…"
         />
       </div>
@@ -180,8 +190,8 @@ export function CvVerifyFormSteps(props: {
   if (step === 2) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Expériences professionnelles</h3>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-base font-semibold tracking-tight text-neutral-900">Expériences professionnelles</h3>
           <button
             type="button"
             onClick={() =>
@@ -190,22 +200,23 @@ export function CvVerifyFormSteps(props: {
                 experience_items: [...d.experience_items, emptyExperience()],
               }))
             }
-            className="text-xs font-semibold text-blue-600 hover:underline"
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-orange-600 transition-colors hover:bg-orange-50"
           >
-            + Ajouter
+            <Plus className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            Ajouter
           </button>
         </div>
         {draft.experience_items.map((exp, i) => (
           <div
             key={i}
-            className="rounded-xl border border-gray-200 p-4 space-y-3 bg-gray-50/30"
+            className="space-y-3 rounded-xl border border-neutral-200/80 bg-stone-50/50 p-4"
           >
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-semibold text-gray-500">Expérience #{i + 1}</span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-neutral-500">Expérience #{i + 1}</span>
               {draft.experience_items.length > 1 && (
                 <button
                   type="button"
-                  className="text-red-500 text-lg leading-none p-1"
+                  className="rounded-lg p-1.5 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600"
                   aria-label="Supprimer"
                   onClick={() =>
                     setDraft((d) => ({
@@ -214,13 +225,13 @@ export function CvVerifyFormSteps(props: {
                     }))
                   }
                 >
-                  🗑
+                  <Trash2 className="h-4 w-4" strokeWidth={1.75} />
                 </button>
               )}
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <label className="block text-xs">
-                <span className="text-gray-600">Poste</span>
+                <span className="text-neutral-600">Poste</span>
                 <input
                   value={exp.job_title}
                   onChange={(e) =>
@@ -230,11 +241,11 @@ export function CvVerifyFormSteps(props: {
                       return { ...d, experience_items: next };
                     })
                   }
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
+                  className={fieldClass}
                 />
               </label>
               <label className="block text-xs">
-                <span className="text-gray-600">Entreprise</span>
+                <span className="text-neutral-600">Entreprise</span>
                 <input
                   value={exp.company}
                   onChange={(e) =>
@@ -244,11 +255,11 @@ export function CvVerifyFormSteps(props: {
                       return { ...d, experience_items: next };
                     })
                   }
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
+                  className={fieldClass}
                 />
               </label>
               <label className="block text-xs">
-                <span className="text-gray-600">Date début</span>
+                <span className="text-neutral-600">Date début</span>
                 <input
                   value={exp.start_date}
                   onChange={(e) =>
@@ -258,11 +269,11 @@ export function CvVerifyFormSteps(props: {
                       return { ...d, experience_items: next };
                     })
                   }
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
+                  className={fieldClass}
                 />
               </label>
               <label className="block text-xs">
-                <span className="text-gray-600">Date fin</span>
+                <span className="text-neutral-600">Date fin</span>
                 <input
                   value={exp.end_date}
                   onChange={(e) =>
@@ -273,7 +284,7 @@ export function CvVerifyFormSteps(props: {
                     })
                   }
                   disabled={exp.is_current}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm disabled:bg-gray-100"
+                  className={`${fieldClass} disabled:bg-neutral-50 disabled:text-neutral-500`}
                 />
               </label>
             </div>
@@ -303,7 +314,7 @@ export function CvVerifyFormSteps(props: {
                   })
                 }
                 rows={4}
-                className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
+                className={fieldClass}
               />
             </label>
           </div>
@@ -315,8 +326,8 @@ export function CvVerifyFormSteps(props: {
   if (step === 3) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Formations & diplômes</h3>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-base font-semibold tracking-tight text-neutral-900">Formations & diplômes</h3>
           <button
             type="button"
             onClick={() =>
@@ -325,22 +336,23 @@ export function CvVerifyFormSteps(props: {
                 education_items: [...d.education_items, emptyEducation()],
               }))
             }
-            className="text-xs font-semibold text-blue-600 hover:underline"
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-orange-600 transition-colors hover:bg-orange-50"
           >
-            + Ajouter
+            <Plus className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            Ajouter
           </button>
         </div>
         {draft.education_items.map((ed, i) => (
           <div
             key={i}
-            className="rounded-xl border border-gray-200 p-4 space-y-3 bg-gray-50/30"
+            className="space-y-3 rounded-xl border border-neutral-200/80 bg-stone-50/50 p-4"
           >
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-semibold text-gray-500">Formation #{i + 1}</span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-neutral-500">Formation #{i + 1}</span>
               {draft.education_items.length > 1 && (
                 <button
                   type="button"
-                  className="text-red-500 text-lg leading-none p-1"
+                  className="rounded-lg p-1.5 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600"
                   aria-label="Supprimer"
                   onClick={() =>
                     setDraft((d) => ({
@@ -349,13 +361,13 @@ export function CvVerifyFormSteps(props: {
                     }))
                   }
                 >
-                  🗑
+                  <Trash2 className="h-4 w-4" strokeWidth={1.75} />
                 </button>
               )}
             </div>
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <label className="block text-xs sm:col-span-2">
-                <span className="text-gray-600">Diplôme / cursus</span>
+                <span className="text-neutral-600">Diplôme / cursus</span>
                 <input
                   value={ed.diploma}
                   onChange={(e) =>
@@ -365,11 +377,11 @@ export function CvVerifyFormSteps(props: {
                       return { ...d, education_items: next };
                     })
                   }
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
+                  className={fieldClass}
                 />
               </label>
               <label className="block text-xs sm:col-span-2">
-                <span className="text-gray-600">Établissement</span>
+                <span className="text-neutral-600">Établissement</span>
                 <input
                   value={ed.institution}
                   onChange={(e) =>
@@ -379,11 +391,11 @@ export function CvVerifyFormSteps(props: {
                       return { ...d, education_items: next };
                     })
                   }
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
+                  className={fieldClass}
                 />
               </label>
               <label className="block text-xs">
-                <span className="text-gray-600">Début</span>
+                <span className="text-neutral-600">Début</span>
                 <input
                   value={ed.start_date}
                   onChange={(e) =>
@@ -393,11 +405,11 @@ export function CvVerifyFormSteps(props: {
                       return { ...d, education_items: next };
                     })
                   }
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
+                  className={fieldClass}
                 />
               </label>
               <label className="block text-xs">
-                <span className="text-gray-600">Fin</span>
+                <span className="text-neutral-600">Fin</span>
                 <input
                   value={ed.end_date}
                   onChange={(e) =>
@@ -408,11 +420,11 @@ export function CvVerifyFormSteps(props: {
                     })
                   }
                   disabled={ed.in_progress}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm disabled:bg-gray-100"
+                  className={`${fieldClass} disabled:bg-neutral-50 disabled:text-neutral-500`}
                 />
               </label>
             </div>
-            <label className="flex items-center gap-2 text-xs text-gray-700">
+            <label className="flex items-center gap-2 text-xs text-neutral-700">
               <input
                 type="checkbox"
                 checked={ed.in_progress}
@@ -434,16 +446,20 @@ export function CvVerifyFormSteps(props: {
 
   if (step === 4) {
     return (
-      <div className="space-y-3">
-        <h3 className="font-semibold text-gray-900">Compétences</h3>
-        <p className="text-xs text-gray-500">Hors langues vivantes — uniquement savoir-faire et outils.</p>
-        <div className="flex gap-2 flex-wrap">
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold tracking-tight text-neutral-900">Compétences</h3>
+          <p className="text-xs leading-relaxed text-neutral-500">
+            Hors langues vivantes — uniquement savoir-faire et outils.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
           <input
             type="text"
             value={skillDraft}
             onChange={(e) => setSkillDraft(e.target.value)}
             placeholder="Ajouter une compétence"
-            className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-3 py-2 text-sm"
+            className={cn("min-w-[160px] flex-1", fieldClass, "mt-0")}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -456,7 +472,7 @@ export function CvVerifyFormSteps(props: {
           />
           <button
             type="button"
-            className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#FE6A2E] to-[#FFB347] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-[1.02]"
             onClick={() => {
               const t = skillDraft.trim();
               if (!t) return;
@@ -464,6 +480,7 @@ export function CvVerifyFormSteps(props: {
               setSkillDraft("");
             }}
           >
+            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
             Ajouter
           </button>
         </div>
@@ -471,18 +488,18 @@ export function CvVerifyFormSteps(props: {
           {draft.skills.map((s, idx) => (
             <span
               key={`${idx}-${s}`}
-              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full bg-blue-50 text-blue-800 border border-blue-100"
+              className="inline-flex items-center gap-1.5 rounded-full border border-orange-100 bg-orange-50/90 px-3 py-1.5 text-xs font-medium text-orange-950"
             >
               {s}
               <button
                 type="button"
-                className="text-blue-600 hover:text-red-600"
+                className="rounded p-0.5 text-orange-600 transition-colors hover:bg-orange-100 hover:text-red-600"
                 onClick={() =>
                   setDraft((d) => ({ ...d, skills: d.skills.filter((x) => x !== s) }))
                 }
                 aria-label={`Retirer ${s}`}
               >
-                ×
+                <X className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
             </span>
           ))}
@@ -494,8 +511,8 @@ export function CvVerifyFormSteps(props: {
   if (step === 5) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Langues</h3>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-base font-semibold tracking-tight text-neutral-900">Langues</h3>
           <button
             type="button"
             onClick={() =>
@@ -504,15 +521,16 @@ export function CvVerifyFormSteps(props: {
                 language_items: [...d.language_items, emptyLanguage()],
               }))
             }
-            className="text-xs font-semibold text-blue-600 hover:underline"
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-orange-600 transition-colors hover:bg-orange-50"
           >
-            + Ajouter
+            <Plus className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            Ajouter
           </button>
         </div>
         {draft.language_items.map((lang, i) => (
           <div key={i} className="flex flex-wrap gap-2 items-end">
-            <label className="flex-1 min-w-[120px] text-xs">
-              <span className="text-gray-600">Langue</span>
+            <label className="min-w-[120px] flex-1 text-xs">
+              <span className="text-neutral-600">Langue</span>
               <input
                 value={lang.language}
                 onChange={(e) =>
@@ -522,11 +540,11 @@ export function CvVerifyFormSteps(props: {
                     return { ...d, language_items: next };
                   })
                 }
-                className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
+                className={fieldClass}
               />
             </label>
-            <label className="flex-1 min-w-[120px] text-xs">
-              <span className="text-gray-600">Niveau</span>
+            <label className="min-w-[120px] flex-1 text-xs">
+              <span className="text-neutral-600">Niveau</span>
               <input
                 value={lang.level}
                 onChange={(e) =>
@@ -537,13 +555,13 @@ export function CvVerifyFormSteps(props: {
                   })
                 }
                 placeholder="B2, courant…"
-                className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
+                className={fieldClass}
               />
             </label>
             {draft.language_items.length > 1 && (
               <button
                 type="button"
-                className="text-red-500 mb-0.5 p-2"
+                className="mb-0.5 rounded-lg p-2 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600"
                 aria-label="Supprimer"
                 onClick={() =>
                   setDraft((d) => ({
@@ -552,7 +570,7 @@ export function CvVerifyFormSteps(props: {
                   }))
                 }
               >
-                🗑
+                <Trash2 className="h-4 w-4" strokeWidth={1.75} />
               </button>
             )}
           </div>
@@ -562,15 +580,15 @@ export function CvVerifyFormSteps(props: {
   }
 
   return (
-    <div className="space-y-3">
-      <h3 className="font-semibold text-gray-900">Centres d’intérêt</h3>
-      <div className="flex gap-2 flex-wrap">
+    <div className="space-y-4">
+      <h3 className="text-base font-semibold tracking-tight text-neutral-900">Centres d’intérêt</h3>
+      <div className="flex flex-wrap gap-2">
         <input
           type="text"
           value={interestDraft}
           onChange={(e) => setInterestDraft(e.target.value)}
           placeholder="Ajouter un centre d’intérêt"
-          className="flex-1 min-w-[160px] rounded-xl border border-gray-200 px-3 py-2 text-sm"
+          className={cn("min-w-[160px] flex-1", fieldClass, "mt-0")}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -583,7 +601,7 @@ export function CvVerifyFormSteps(props: {
         />
         <button
           type="button"
-          className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#FE6A2E] to-[#FFB347] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-[1.02]"
           onClick={() => {
             const t = interestDraft.trim();
             if (!t) return;
@@ -591,6 +609,7 @@ export function CvVerifyFormSteps(props: {
             setInterestDraft("");
           }}
         >
+          <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
           Ajouter
         </button>
       </div>
@@ -598,12 +617,12 @@ export function CvVerifyFormSteps(props: {
         {draft.interests.map((tag, idx) => (
           <span
             key={`${idx}-${tag}`}
-            className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full bg-gray-100 border border-gray-200"
+            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs font-medium text-neutral-800"
           >
             {tag}
             <button
               type="button"
-              className="text-gray-500 hover:text-red-600"
+              className="rounded p-0.5 text-neutral-500 transition-colors hover:bg-neutral-200/80 hover:text-red-600"
               onClick={() =>
                 setDraft((d) => ({
                   ...d,
@@ -612,7 +631,7 @@ export function CvVerifyFormSteps(props: {
               }
               aria-label={`Retirer ${tag}`}
             >
-              ×
+              <X className="h-3.5 w-3.5" strokeWidth={2} />
             </button>
           </span>
         ))}
