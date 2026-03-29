@@ -77,6 +77,7 @@ export default function EntreprisesPage() {
   const [excludedTailleKeys, setExcludedTailleKeys] = useState<Set<string>>(() => new Set());
   const [viewMode, setViewMode] = useState<"list" | "swipe">("list");
   const [detail, setDetail] = useState<EntrepriseSearchResult | null>(null);
+  const [detailWebsite, setDetailWebsite] = useState<string | null | "loading">(null);
   const [selectionOpen, setSelectionOpen] = useState(false);
 
   const selection = useSelectionStore((s) => s.selection);
@@ -330,7 +331,14 @@ export default function EntreprisesPage() {
                   onToggleAll={toggleAll}
                   isInStore={isSelectedStore}
                   onAdd={handleAdd}
-                  onVoir={setDetail}
+                  onVoir={(row) => {
+                    setDetail(row);
+                    setDetailWebsite("loading");
+                    fetch(`/api/entreprises/website?siren=${row.siren ?? ""}&nom=${encodeURIComponent(row.nom)}`)
+                      .then((r) => r.json())
+                      .then((d: { url: string | null }) => setDetailWebsite(d.url))
+                      .catch(() => setDetailWebsite(null));
+                  }}
                 />
               )}
 
@@ -372,7 +380,7 @@ export default function EntreprisesPage() {
                 </h2>
                 <button
                   type="button"
-                  onClick={() => setDetail(null)}
+                  onClick={() => { setDetail(null); setDetailWebsite(null); }}
                   className="rounded-lg p-1 text-[#737373] hover:bg-[#2A2A2A] hover:text-[#F5F5F5]"
                   aria-label="Fermer"
                 >
@@ -387,7 +395,7 @@ export default function EntreprisesPage() {
                 <div>
                   <dt className="text-[#525252]">Adresse</dt>
                   <dd className="text-[#A3A3A3]">
-                    {detail.codePostal} {detail.ville}
+                    {detail.adresse || `${detail.codePostal} ${detail.ville}`}
                   </dd>
                 </div>
                 <div>
@@ -396,8 +404,49 @@ export default function EntreprisesPage() {
                 </div>
                 <div>
                   <dt className="text-[#525252]">Taille</dt>
-                  <dd className="text-[#A3A3A3]">{detail.taille}</dd>
+                  <dd className="text-[#A3A3A3]">
+                    {detail.taille}
+                    {detail.effectifLabel && detail.effectifLabel !== "Non renseigné" && (
+                      <span className="ml-2 text-[#737373]">· {detail.effectifLabel}</span>
+                    )}
+                  </dd>
                 </div>
+                <div>
+                  <dt className="text-[#525252]">Site web</dt>
+                  <dd className="mt-0.5">
+                    {detailWebsite === "loading" && (
+                      <span className="text-xs text-[#737373] animate-pulse">Recherche en cours…</span>
+                    )}
+                    {detailWebsite && detailWebsite !== "loading" && (
+                      <a
+                        href={detailWebsite}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#F97316] underline-offset-2 hover:underline break-all text-sm"
+                      >
+                        {detailWebsite.replace(/^https?:\/\/(www\.)?/, "")}
+                      </a>
+                    )}
+                    {detailWebsite === null && (
+                      <span className="text-xs text-[#525252]">Non trouvé</span>
+                    )}
+                  </dd>
+                </div>
+                {detail.annuaireUrl && (
+                  <div>
+                    <dt className="text-[#525252]">Fiche officielle</dt>
+                    <dd>
+                      <a
+                        href={detail.annuaireUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#737373] text-xs underline-offset-2 hover:underline"
+                      >
+                        Annuaire des Entreprises →
+                      </a>
+                    </dd>
+                  </div>
+                )}
               </dl>
               <button
                 type="button"

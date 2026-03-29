@@ -6,6 +6,8 @@ import { ScoreBadge } from "./ScoreBadge";
 import { TaillePill } from "./TaillePill";
 import { cn } from "@/lib/utils";
 
+const DOMAINE_MAX = 28;
+
 type EntrepriseRowProps = {
   row: EntrepriseSearchResult;
   selected: boolean;
@@ -25,7 +27,9 @@ export function EntrepriseRow({
   onVoir,
 }: EntrepriseRowProps) {
   const domaine = row.libelleNaf || row.domaine || row.naf;
-  const employes = row.trancheEffectifs && row.trancheEffectifs !== "NN" ? row.trancheEffectifs : "—";
+  const employes = row.effectifLabel && row.effectifLabel !== "Non renseigné" ? row.effectifLabel : "—";
+  const domaineIsTruncated = domaine.length > DOMAINE_MAX;
+  const domaineShort = domaineIsTruncated ? domaine.slice(0, DOMAINE_MAX) + "…" : domaine;
 
   return (
     <tr
@@ -45,7 +49,6 @@ export function EntrepriseRow({
       </td>
       <td className="px-3 py-3">
         <p className="font-semibold text-[#F5F5F5]">{row.nom}</p>
-        <p className="text-[11px] text-[#525252]">{row.siret}</p>
       </td>
       <td className="px-3 py-3">
         <ScoreBadge score={row.score} />
@@ -53,8 +56,17 @@ export function EntrepriseRow({
       <td className="px-3 py-3 text-sm text-[#A3A3A3]">
         {row.codePostal} {row.ville}
       </td>
-      <td className="max-w-[200px] truncate px-3 py-3 text-sm text-[#A3A3A3]" title={domaine}>
-        {domaine}
+      <td className="px-3 py-3 text-sm text-[#A3A3A3]">
+        <span>{domaineShort}</span>
+        {domaineIsTruncated && (
+          <button
+            type="button"
+            onClick={() => onVoir(row)}
+            className="ml-1 text-[11px] text-[#F97316] hover:underline"
+          >
+            voir +
+          </button>
+        )}
       </td>
       <td className="px-3 py-3 text-center text-xs tabular-nums text-[#737373]">{employes}</td>
       <td className="px-3 py-3">

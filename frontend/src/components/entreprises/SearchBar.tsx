@@ -51,7 +51,7 @@ export function SearchBar({
         <label className="block">
           <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-[#525252]">
             <MapPin className="h-3.5 w-3.5 text-[#F97316]" aria-hidden />
-            Ville ou CP
+            Adresse, ville ou CP
           </span>
           <div className="relative">
             <MapPin
@@ -62,7 +62,7 @@ export function SearchBar({
               type="text"
               value={ville}
               onChange={(e) => onVilleChange(e.target.value)}
-              placeholder="ex. Versailles"
+              placeholder="ex. 12 rue de la Paix, Paris"
               className="w-full rounded-xl border border-[#2A2A2A] bg-[#141414] py-2.5 pl-10 pr-3 text-sm text-[#F5F5F5] placeholder:text-[#525252] focus:border-[#F97316] focus:outline-none focus:ring-2 focus:ring-[#F97316]/25"
             />
           </div>
@@ -92,7 +92,7 @@ export function SearchBar({
             />
           </Slider.Root>
           <p className="text-[10px] text-[#525252]">
-            Le rayon sera utilisé pour d’éventuelles extensions géographiques (ville → CP).
+            Périmètre calculé depuis l’adresse saisie.
           </p>
         </div>
         <div className="flex lg:justify-end">
