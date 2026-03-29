@@ -10,6 +10,11 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Identité Postuly (dashboard) */
+  --color-postuly-orange: #f97316;
+  --color-postuly-orange-hover: #ea6c0a;
+  --color-postuly-orange-light: #fff7ed;
+  --color-postuly-orange-pale: #fffbf7;
 }
 
 body {
@@ -34,4 +39,23 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
+}
+
+/* Export PDF / impression : isoler le rapport d’analyse CV */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #cv-analysis-print,
+  #cv-analysis-print * {
+    visibility: visible;
+  }
+  #cv-analysis-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 1rem;
+    background: #fff;
+  }
 }

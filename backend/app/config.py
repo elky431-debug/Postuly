@@ -1,8 +1,17 @@
-from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Charge backend/.env — ignore les clés inconnues (ex. DATABASE_URL)."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
     # Supabase
     supabase_url: str = ""
     supabase_anon_key: str = ""
@@ -34,11 +43,6 @@ class Settings(BaseSettings):
 
     # Sécurité
     secret_key: str = "change-me-in-production"
-
-    model_config = {
-        "env_file": ".env",
-        "env_file_encoding": "utf-8",
-    }
 
 
 @lru_cache()

@@ -1,10 +1,11 @@
 """Modèles Pydantic pour la validation des données API."""
 
+import json
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 # ─── Profiles ────────────────────────────────────────────
@@ -12,16 +13,80 @@ from pydantic import BaseModel, EmailStr, Field
 class ProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     profile_type: Optional[str] = Field(None, pattern="^(etudiant|jeune_actif)$")
+    # Formulaire Mon CV (extraction IA + édition utilisateur)
+    cv_parsed: Optional[dict[str, Any]] = None
+    cv_url: Optional[str] = None
+    cv_score: Optional[int] = None
+
+    @field_validator("cv_score", mode="before")
+    @classmethod
+    def coerce_cv_score_update(cls, v: object) -> Optional[int]:
+        if v is None:
+            return None
+        return int(round(float(v)))
 
 
 class ProfileResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     id: UUID
     full_name: Optional[str] = None
     profile_type: Optional[str] = None
     cv_url: Optional[str] = None
-    cv_parsed: Optional[dict] = None
+    cv_parsed: Optional[dict[str, Any]] = None
     cv_score: Optional[int] = None
-    created_at: datetime
+    created_at: Optional[datetime] = None
+
+    @field_validator("cv_score", mode="before")
+    @classmethod
+    def coerce_cv_score(cls, v: object) -> Optional[int]:
+        if v is None:
+            return None
+        return int(round(float(v)))
+
+    @field_validator("cv_parsed", mode="before")
+    @classmethod
+    def coerce_cv_parsed(cls, v: object) -> Optional[dict[str, Any]]:
+        if v is None:
+            return None
+        if isinstance(v, dict):
+            return v
+        if isinstance(v, str):
+            try:
+                parsed = json.loads(v)
+                return parsed if isinstance(parsed, dict) else None
+            except json.JSONDecodeError:
+                return None
+        return None
+
+    @field_validator("created_at", mode="before")
+    @classmethod
+    def coerce_created_at(cls, v: object) -> Optional[datetime]:
+        if v is None or v == "":
+            return None
+        if isinstance(v, datetime):
+            return v
+        s = str(v).strip().replace("Z", "+00:00")
+        try:
+            return datetime.fromisoformat(s)
+        except ValueError:
+            try:
+                return datetime.fromisoformat(str(v).strip().replace("Z", ""))
+            except ValueError:
+                return None
+
+
+# ─── Analyse coach CV (IA) ────────────────────────────────
+
+class CvCoachAnalyzeRequest(BaseModel):
+    """Paramètres optionnels pour contextualiser l’analyse IA du CV."""
+
+    poste_recherche: Optional[str] = Field(None, max_length=400)
+    type_contrat: Optional[str] = Field(None, pattern="^(stage|alternance|cdi|cdd)$")
+    profil_hint: Optional[str] = Field(
+        None,
+        pattern="^(etudiant|jeune_actif|reconversion)$",
+    )
 
 
 # ─── Campaigns ───────────────────────────────────────────

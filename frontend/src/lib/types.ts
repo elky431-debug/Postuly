@@ -5,7 +5,37 @@ export interface Profile {
   cv_url: string | null;
   cv_parsed: CvParsed | null;
   cv_score: number | null;
-  created_at: string;
+  created_at: string | null;
+}
+
+/** Blocs structurés remplis par l’IA (upload CV) — éditables sur Mon CV. */
+export interface CvPersonalParsed {
+  full_name: string;
+  address: string;
+  city: string;
+  postal_code: string;
+}
+
+export interface CvExperienceParsed {
+  job_title: string;
+  company: string;
+  start_date: string;
+  end_date: string;
+  description: string;
+  is_current: boolean;
+}
+
+export interface CvEducationParsed {
+  diploma: string;
+  institution: string;
+  start_date: string;
+  end_date: string;
+  in_progress: boolean;
+}
+
+export interface CvLanguageParsed {
+  language: string;
+  level: string;
 }
 
 export interface CvParsed {
@@ -16,6 +46,64 @@ export interface CvParsed {
   education: string[];
   skills: string[];
   languages: string[];
+  personal?: CvPersonalParsed;
+  professional_summary?: string;
+  experience_items?: CvExperienceParsed[];
+  education_items?: CvEducationParsed[];
+  language_items?: CvLanguageParsed[];
+  interests?: string[];
+}
+
+/** Réponse de POST /api/cv/analyse-coach (structure produite par le modèle). */
+export interface CvCoachAnalysis {
+  score_global: number;
+  score_potentiel: number;
+  niveau: string;
+  profil_detecte: string;
+  synthese: {
+    texte: string;
+    nb_corrections_prioritaires?: number;
+    temps_estime_minutes?: number;
+  };
+  objectif_recherche?: {
+    poste?: string;
+    type_contrat?: string;
+    evaluation?: string;
+    adequation?: string;
+    alternatives?: string[];
+  };
+  points_forts: Array<{
+    titre: string;
+    description: string;
+    impact: string;
+  }>;
+  points_ameliorer: Array<{
+    priorite: string;
+    section: string;
+    titre: string;
+    description: string;
+    suggestion_concrete: string;
+  }>;
+  analyse_sections?: Record<string, unknown>;
+  secteurs_compatibles?: Array<{
+    nom: string;
+    adequation: string;
+    codes_naf: string[];
+  }>;
+  mots_cles_ats?: {
+    presents?: string[];
+    manquants?: string[];
+    score_ats?: number;
+    commentaire?: string;
+  };
+  plan_action: Array<{
+    ordre: number;
+    action: string;
+    section_concernee: string;
+    difficulte: string;
+    impact_score: number;
+    exemple_concret: string;
+  }>;
 }
 
 export interface Campaign {

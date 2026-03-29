@@ -49,17 +49,20 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF9]">
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-2 border-stone-200 border-t-[#F97316]"
+          aria-hidden
+        />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-[#FAFAF9]">
       <Sidebar />
       <main className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto px-6 py-8">{children}</div>
+        <div className="mx-auto max-w-7xl px-6 py-8">{children}</div>
       </main>
     </div>
   );

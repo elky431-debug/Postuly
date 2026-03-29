@@ -12,6 +12,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetInfo, setResetInfo] = useState("");
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -21,17 +23,55 @@ export default function LoginPage() {
 
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     });
 
     if (error) {
-      setError("Email ou mot de passe incorrect");
+      /* Messages Supabase utiles en dev (email non confirmé, etc.) */
+      const msg = error.message.toLowerCase();
+      if (msg.includes("invalid login") || msg.includes("invalid credentials")) {
+        setError(
+          "Email ou mot de passe incorrect. " +
+            "Astuce : ce n’est pas le mot de passe « base de données » du projet Supabase, " +
+            "mais celui défini à l’inscription (ou utilise « Continuer avec Google »)."
+        );
+      } else if (msg.includes("email not confirmed")) {
+        setError(
+          "Confirme ton email : ouvre le lien reçu depuis Supabase, " +
+            "ou désactive la confirmation obligatoire dans Authentication → Providers → Email."
+        );
+      } else {
+        setError(error.message);
+      }
       setLoading(false);
       return;
     }
 
     router.push("/dashboard");
+  }
+
+  async function handleForgotPassword() {
+    setError("");
+    setResetInfo("");
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError("Indique ton email ci-dessus, puis clique à nouveau sur « Mot de passe oublié ».");
+      return;
+    }
+    setResetLoading(true);
+    const supabase = createClient();
+    const { error: err } = await supabase.auth.resetPasswordForEmail(trimmed, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    setResetLoading(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    setResetInfo(
+      "Si un compte existe pour cet email, tu vas recevoir un lien pour choisir un nouveau mot de passe (vérifie les spams)."
+    );
   }
 
   async function handleGoogleLogin() {
@@ -105,15 +145,29 @@ export default function LoginPage() {
               placeholder="ton@email.com"
               required
             />
-            <Input
-              id="password"
-              label="Mot de passe"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
+            <div className="space-y-1">
+              <Input
+                id="password"
+                label="Mot de passe"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={resetLoading}
+                className="text-xs text-indigo-600 hover:underline disabled:opacity-50"
+              >
+                {resetLoading ? "Envoi…" : "Mot de passe oublié ?"}
+              </button>
+            </div>
+
+            {resetInfo && (
+              <p className="text-sm text-green-700 bg-green-50 p-3 rounded-lg">{resetInfo}</p>
+            )}
 
             {error && (
               <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">

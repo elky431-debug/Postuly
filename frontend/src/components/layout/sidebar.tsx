@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Rocket,
@@ -15,19 +15,18 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
 
-const ORANGE = "#FE6A2E";
-const ORANGE_LIGHT = "#FFF1E3";
+const ORANGE = "#F97316";
+const BORDER = "#E7E5E4";
 
 const navigation = [
-  { name: "Dashboard",  href: "/dashboard",  icon: LayoutDashboard, badge: null },
-  { name: "Campagnes",  href: "/campaigns",  icon: Rocket,           badge: null },
-  { name: "Kanban",     href: "/kanban",      icon: Columns3,         badge: null },
-  { name: "Mon CV",     href: "/cv",          icon: FileText,         badge: null },
-  { name: "Relances",   href: "/relances",    icon: RefreshCw,        badge: "Nouveau" },
-  { name: "Offres",     href: "/offres",      icon: Briefcase,        badge: "Nouveau" },
-  { name: "Entretien",  href: "/entretien",   icon: MessageSquare,    badge: "V2" },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, badge: null as string | null, disabled: false },
+  { name: "Campagnes", href: "/campaigns", icon: Rocket, badge: null, disabled: false },
+  { name: "Kanban", href: "/kanban", icon: Columns3, badge: null, disabled: false },
+  { name: "Mon CV", href: "/cv", icon: FileText, badge: null, disabled: false },
+  { name: "Relances", href: "/relances", icon: RefreshCw, badge: "Nouveau", disabled: false },
+  { name: "Offres", href: "/offres", icon: Briefcase, badge: "Nouveau", disabled: false },
+  { name: "Entretien", href: "/entretien", icon: MessageSquare, badge: "V2", disabled: true },
 ];
 
 export function Sidebar() {
@@ -41,50 +40,51 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="flex flex-col w-60 bg-white border-r border-gray-100 min-h-screen">
-      {/* Logo */}
-      <div className="flex items-center h-16 px-5 border-b border-gray-100">
+    <aside
+      className="flex min-h-screen w-60 flex-col border-r bg-white"
+      style={{ borderColor: BORDER }}
+    >
+      <div className="flex h-16 items-center border-b px-5" style={{ borderColor: BORDER }}>
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: ORANGE }}>
-            <span className="text-white font-bold text-sm">P</span>
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white"
+            style={{ backgroundColor: ORANGE }}
+          >
+            P
           </div>
-          <span className="text-lg font-bold text-gray-900 tracking-tight">Postuly</span>
+          <span className="text-lg font-semibold tracking-tight text-[#1C1917]">Postuly</span>
         </Link>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-5 space-y-0.5">
+      <nav className="flex-1 space-y-0.5 px-3 py-5">
         {navigation.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-          const isV2 = item.badge === "V2";
+          const isActive =
+            pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const Icon = item.icon;
 
           return (
             <Link
               key={item.name}
-              href={isV2 ? "#" : item.href}
+              href={item.disabled ? "#" : item.href}
+              onClick={(e) => {
+                if (item.disabled) e.preventDefault();
+              }}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                isActive
-                  ? "text-white"
-                  : isV2
-                  ? "text-gray-300 cursor-not-allowed"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] transition-colors",
+                item.disabled && "cursor-not-allowed opacity-50",
+                !item.disabled && !isActive && "text-stone-600 hover:bg-stone-50",
+                isActive && !item.disabled && "bg-orange-50 font-medium text-orange-600"
               )}
-              style={isActive ? { backgroundColor: ORANGE } : {}}
-              onClick={isV2 ? (e) => e.preventDefault() : undefined}
             >
-              <item.icon className="w-4 h-4 flex-shrink-0" />
+              <Icon className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
               <span className="flex-1">{item.name}</span>
               {item.badge && (
                 <span
-                  className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
-                  style={
-                    isActive
-                      ? { backgroundColor: "rgba(255,255,255,0.25)", color: "white" }
-                      : isV2
-                      ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
-                      : { backgroundColor: ORANGE_LIGHT, color: ORANGE }
-                  }
+                  className={cn(
+                    "rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                    item.badge === "Nouveau" && "bg-orange-100 text-orange-700",
+                    item.badge === "V2" && "bg-stone-100 text-stone-500"
+                  )}
                 >
                   {item.badge}
                 </span>
@@ -94,20 +94,20 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-3 py-4 border-t border-gray-100 space-y-0.5">
+      <div className="space-y-0.5 border-t px-3 py-4" style={{ borderColor: BORDER }}>
         <Link
           href="/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] text-stone-600 transition-colors hover:bg-stone-50"
         >
-          <Settings className="w-4 h-4" />
+          <Settings className="h-4 w-4 shrink-0" strokeWidth={2} />
           Paramètres
         </Link>
         <button
+          type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-500 transition-colors"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[14px] text-stone-600 transition-colors hover:bg-red-50 hover:text-red-600"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="h-4 w-4 shrink-0" strokeWidth={2} />
           Déconnexion
         </button>
       </div>
