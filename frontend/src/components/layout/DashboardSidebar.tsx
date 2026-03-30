@@ -9,30 +9,14 @@ import {
   Settings,
   LogOut,
   Building2,
-  UserRound,
-  CreditCard,
+  BookmarkCheck,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
+import { useSelectionStore } from "@/store/selectionStore";
 
 const ORANGE = "#F97316";
-
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, badge: null as string | null, disabled: false },
-  { name: "Kanban", href: "/kanban", icon: Columns3, badge: null, disabled: false },
-  {
-    name: "Entreprises",
-    href: "/dashboard/entreprises",
-    icon: Building2,
-    badge: null,
-    disabled: false,
-  },
-  { name: "Mon CV", href: "/cv", icon: FileText, badge: null, disabled: false },
-  { name: "Profil", href: "/dashboard/profil", icon: UserRound, badge: null, disabled: false },
-  { name: "Paramètres", href: "/dashboard/parametres", icon: Settings, badge: null, disabled: false },
-  { name: "Abonnement", href: "/dashboard/abonnement", icon: CreditCard, badge: null, disabled: false },
-];
 
 function userDisplayName(user: User): string {
   const meta = user.user_metadata as { full_name?: string } | undefined;
@@ -62,6 +46,21 @@ type DashboardSidebarProps = {
 export function DashboardSidebar({ user }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const selectionCount = useSelectionStore((s) => s.selection.length);
+
+  const navigation = [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, badge: null as number | null, disabled: false },
+    { name: "Kanban", href: "/kanban", icon: Columns3, badge: null, disabled: false },
+    { name: "Entreprises", href: "/dashboard/entreprises", icon: Building2, badge: null, disabled: false },
+    {
+      name: "Sélections",
+      href: "/dashboard/selections",
+      icon: BookmarkCheck,
+      badge: selectionCount > 0 ? selectionCount : null,
+      disabled: false,
+    },
+    { name: "Mon CV", href: "/cv", icon: FileText, badge: null, disabled: false },
+  ];
   const email = user.email ?? "";
   const truncatedEmail = email.length > 28 ? `${email.slice(0, 26)}…` : email;
 
@@ -115,28 +114,20 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
                 !item.disabled && !isActive && "text-stone-600"
               )}
             >
-              <span className="flex items-center gap-3 px-3 py-2">
-                <Icon
-                  className={cn(
-                    "h-4 w-4 shrink-0",
-                    isActive && !item.disabled ? "text-orange-600" : "text-stone-400"
-                  )}
-                  strokeWidth={2}
-                  aria-hidden
-                />
-                <span className="min-w-0 flex-1 truncate">{item.name}</span>
-                {item.badge && (
-                  <span
-                    className={cn(
-                      "rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide",
-                      item.badge === "NEW" && "bg-orange-100 text-orange-700",
-                      item.badge === "V2" && "bg-neutral-100 text-neutral-500"
-                    )}
-                  >
-                    {item.badge}
-                  </span>
+              <Icon
+                className={cn(
+                  "h-4 w-4 shrink-0",
+                  isActive && !item.disabled ? "text-orange-600" : "text-neutral-400"
                 )}
-              </span>
+                strokeWidth={2}
+                aria-hidden
+              />
+              <span className="flex-1 truncate">{item.name}</span>
+              {item.badge !== null && (
+                <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-bold text-white">
+                  {item.badge}
+                </span>
+              )}
             </Link>
           );
         })}

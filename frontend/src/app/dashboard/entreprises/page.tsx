@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { X } from "lucide-react"; // gardé pour le panneau détail entreprise
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ActivityFilters } from "@/components/entreprises/ActivityFilters";
 import { FilterChips, type TailleCode } from "@/components/entreprises/FilterChips";
@@ -78,11 +78,9 @@ export default function EntreprisesPage() {
   const [viewMode, setViewMode] = useState<"list" | "swipe">("list");
   const [detail, setDetail] = useState<EntrepriseSearchResult | null>(null);
   const [detailWebsite, setDetailWebsite] = useState<string | null | "loading">(null);
-  const [selectionOpen, setSelectionOpen] = useState(false);
 
   const selection = useSelectionStore((s) => s.selection);
   const ajouterEntreprise = useSelectionStore((s) => s.ajouterEntreprise);
-  const retirerEntreprise = useSelectionStore((s) => s.retirerEntreprise);
   const isSelectedStore = useSelectionStore((s) => s.isSelected);
 
   const step = useMemo(() => {
@@ -362,7 +360,6 @@ export default function EntreprisesPage() {
           checkedCount={checkedSirets.size}
           selectionCount={selection.length}
           onAddChecked={handleAddChecked}
-          onOpenSelection={() => setSelectionOpen(true)}
         />
 
         {/* Détail entreprise */}
@@ -462,57 +459,6 @@ export default function EntreprisesPage() {
           </div>
         )}
 
-        {/* Panneau Ma sélection */}
-        {selectionOpen && (
-          <div
-            className="fixed inset-0 z-50 flex justify-end bg-black/40"
-            role="dialog"
-            aria-modal
-            aria-labelledby="selection-title"
-          >
-            <div className="flex h-full w-full max-w-md flex-col border-l border-neutral-200 bg-white shadow-xl">
-              <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-4">
-                <h2 id="selection-title" className="text-lg font-bold text-neutral-900">
-                  Ma sélection
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setSelectionOpen(false)}
-                  className="rounded-lg p-1 text-neutral-500 hover:bg-neutral-100"
-                  aria-label="Fermer"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <ul className="flex-1 overflow-y-auto p-4">
-                {selection.length === 0 ? (
-                  <p className="text-sm text-neutral-600">Aucune entreprise pour l’instant.</p>
-                ) : (
-                  selection.map((e) => (
-                    <li
-                      key={e.siret}
-                      className="mb-3 flex items-start justify-between gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-semibold text-neutral-900">{e.nom}</p>
-                        <p className="text-xs text-neutral-600">
-                          {e.codePostal} {e.ville}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => retirerEntreprise(e.siret)}
-                        className="shrink-0 text-xs font-medium text-red-400 hover:underline"
-                      >
-                        Retirer
-                      </button>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
-          </div>
-        )}
       </div>
     </DashboardLayout>
   );
