@@ -20,7 +20,7 @@ export function SelectionBar({
 }: SelectionBarProps) {
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#2A2A2A] bg-[#1A1A1A]/95 px-4 py-3 backdrop-blur-md md:left-[220px]"
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-neutral-200 bg-white/95 px-4 py-3 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] backdrop-blur-md md:left-[220px]"
       style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
@@ -36,7 +36,7 @@ export function SelectionBar({
         <button
           type="button"
           onClick={onOpenSelection}
-          className="inline-flex items-center gap-2 rounded-xl border border-[#2A2A2A] bg-[#2A2A2A] px-4 py-2.5 text-sm font-semibold text-[#F5F5F5] transition hover:bg-[#333]"
+          className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50"
         >
           <ClipboardList className="h-4 w-4" aria-hidden />
           Ma sélection ({selectionCount})

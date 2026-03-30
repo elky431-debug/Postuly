@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # Resend
     resend_api_key: str = ""
 
+    # n8n (workflows, ex. envoi d’e-mails)
+    n8n_webhook_url: str = ""
+
     # Vérification email
     millionverifier_api_key: str = ""
 

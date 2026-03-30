@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   Rocket,
   Play,
-  Pause,
   MapPin,
   Building2,
   Mail,
@@ -35,6 +34,7 @@ export default function CampaignDetailPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [launching, setLaunching] = useState(false);
+  const [launchingN8n, setLaunchingN8n] = useState(false);
   const [token, setToken] = useState("");
 
   const loadData = useCallback(async () => {
@@ -82,6 +82,30 @@ export default function CampaignDetailPage() {
       // Erreur silencieuse en MVP
     }
     setLaunching(false);
+  }
+
+  /** Déclenche le workflow n8n (envoi Gmail espacé) pour les candidatures approuvées. */
+  async function handleLaunchN8n() {
+    if (!campaign || !token) return;
+    setLaunchingN8n(true);
+    try {
+      const data = await api<{
+        success?: boolean;
+        message?: string;
+        nb_emails?: number;
+      }>("/api/campaigns/launch", {
+        method: "POST",
+        token,
+        body: { campaignId: campaign.id },
+      });
+      if (data.success) {
+        alert(data.message ?? `${data.nb_emails ?? 0} e-mail(s) confié(s) à n8n.`);
+      }
+      await loadData();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Échec du lancement n8n");
+    }
+    setLaunchingN8n(false);
   }
 
   async function handleApprove(applicationId: string) {
@@ -168,12 +192,24 @@ export default function CampaignDetailPage() {
             </div>
           </div>
 
-          {campaign.status === "draft" && (
-            <Button onClick={handleLaunch} loading={launching}>
-              <Play className="w-4 h-4 mr-2" />
-              Lancer la campagne
-            </Button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {campaign.status === "draft" && (
+              <Button onClick={handleLaunch} loading={launching}>
+                <Play className="w-4 h-4 mr-2" />
+                Lancer la campagne
+              </Button>
+            )}
+            {applications.some((a) => a.status === "approved") && (
+              <Button
+                variant="outline"
+                onClick={() => void handleLaunchN8n()}
+                loading={launchingN8n}
+              >
+                <Rocket className="w-4 h-4 mr-2" />
+                Envoyer via Gmail (n8n)
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Stats rapides */}

@@ -42,7 +42,7 @@ export function Sparkline({ accent, seed = "postuly" }: SparklineProps) {
           }}
           style={{
             height: `${pct * 100}%`,
-            backgroundColor: i === BAR_COUNT - 1 ? accent : "#E5E7EB",
+            backgroundColor: i === BAR_COUNT - 1 ? accent : "#D6D3D1",
           }}
         />
       ))}

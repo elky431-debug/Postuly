@@ -22,7 +22,7 @@ const DEFAULT_7 = [0, 0, 0, 0, 0, 0, 0];
 const DEFAULT_30 = [0, 0, 0, 0];
 
 const ORANGE = "#F97316";
-const GRID = "#E5E7EB";
+const GRID = "#E7E5E4";
 
 /** Histogramme — fond clair. */
 export function CampaignChart({ period, values, labels: labelsProp }: CampaignChartProps) {
@@ -65,7 +65,7 @@ export function CampaignChart({ period, values, labels: labelsProp }: CampaignCh
             dataKey="v"
             radius={[4, 4, 0, 0]}
             fill={ORANGE}
-            fillOpacity={0.35}
+            fillOpacity={0.45}
             activeBar={{ fill: ORANGE, fillOpacity: 1 }}
             maxBarSize={36}
             isAnimationActive

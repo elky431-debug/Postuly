@@ -228,7 +228,7 @@ export default function EntreprisesPage() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-[#0F0F0F] pb-28 text-[#F5F5F5]">
+      <div className="min-h-screen bg-white pb-28 text-neutral-900">
         <div className="mx-auto max-w-6xl px-4 py-8">
           {/* Fil d’étapes */}
           <div className="mb-8 flex flex-wrap items-center justify-center gap-2 text-xs sm:justify-between sm:gap-4">
@@ -243,22 +243,22 @@ export default function EntreprisesPage() {
                 <span
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold",
-                    step >= n ? "bg-[#F97316] text-white" : "bg-[#2A2A2A] text-[#737373]"
+                    step >= n ? "bg-[#F97316] text-white" : "bg-neutral-200 text-neutral-500"
                   )}
                 >
                   {n}
                 </span>
-                <span className={cn("hidden font-medium sm:inline", step >= n ? "text-[#F5F5F5]" : "text-[#525252]")}>
+                <span className={cn("hidden font-medium sm:inline", step >= n ? "text-neutral-900" : "text-neutral-500")}>
                   {label}
                 </span>
-                {i < 2 && <span className="hidden text-[#2A2A2A] sm:inline">→</span>}
+                {i < 2 && <span className="hidden text-neutral-300 sm:inline">→</span>}
               </div>
             ))}
           </div>
 
-          <div className="rounded-2xl border border-[#2A2A2A] bg-[#1A1A1A] p-5 shadow-xl sm:p-8">
-            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Entreprises</h1>
-            <p className="mt-1 text-sm text-[#A3A3A3]">
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-8">
+            <h1 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">Entreprises</h1>
+            <p className="mt-1 text-sm text-neutral-600">
               Recherche et sélection pour vos candidatures spontanées (données SIRENE via l’INSEE).
             </p>
 
@@ -286,7 +286,7 @@ export default function EntreprisesPage() {
           </div>
 
           {error && (
-            <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
               {error}
             </div>
           )}
@@ -294,7 +294,7 @@ export default function EntreprisesPage() {
           {loading && <SearchLoading active={loading} />}
 
           {!loading && hasSearched && rawRows.length === 0 && !error && (
-            <p className="mt-8 text-center text-sm text-[#A3A3A3]">
+            <p className="mt-8 text-center text-sm text-neutral-600">
               Peu de résultats ? Élargis le rayon ou essaie un autre secteur.
             </p>
           )}
@@ -302,8 +302,8 @@ export default function EntreprisesPage() {
           {!loading && rawRows.length > 0 && (
             <div className="mt-8 space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <p className="text-sm text-[#A3A3A3]">
-                  <span className="font-semibold text-[#F5F5F5]">{filteredRows.length}</span> affichée(s) sur{" "}
+                <p className="text-sm text-neutral-600">
+                  <span className="font-semibold text-neutral-900">{filteredRows.length}</span> affichée(s) sur{" "}
                   <span className="tabular-nums">{total}</span> résultat(s) INSEE
                 </p>
                 <SwipeMode mode={viewMode} onModeChange={setViewMode} />
@@ -319,7 +319,7 @@ export default function EntreprisesPage() {
               />
 
               {viewMode === "list" && filteredRows.length === 0 && (
-                <p className="text-center text-sm text-[#737373]">
+                <p className="text-center text-sm text-neutral-500">
                   Aucune entreprise ne correspond aux filtres activités / tailles. Réactive des cases ci-dessus.
                 </p>
               )}
@@ -348,7 +348,7 @@ export default function EntreprisesPage() {
                     type="button"
                     disabled={loading}
                     onClick={() => void fetchPage(page + 1, true)}
-                    className="rounded-xl border border-[#2A2A2A] bg-[#141414] px-6 py-2.5 text-sm font-semibold text-[#F5F5F5] transition hover:border-[#F97316]/50 disabled:opacity-50"
+                    className="rounded-xl border border-neutral-200 bg-white px-6 py-2.5 text-sm font-semibold text-neutral-900 shadow-sm transition hover:border-[#F97316]/50 hover:bg-neutral-50 disabled:opacity-50"
                   >
                     Charger plus
                   </button>
@@ -368,20 +368,20 @@ export default function EntreprisesPage() {
         {/* Détail entreprise */}
         {detail && (
           <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
             role="dialog"
             aria-modal
             aria-labelledby="entreprise-detail-title"
           >
-            <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[#2A2A2A] bg-[#1A1A1A] p-6 shadow-2xl">
+            <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl">
               <div className="flex items-start justify-between gap-3">
-                <h2 id="entreprise-detail-title" className="text-lg font-bold text-[#F5F5F5]">
+                <h2 id="entreprise-detail-title" className="text-lg font-bold text-neutral-900">
                   {detail.nom}
                 </h2>
                 <button
                   type="button"
                   onClick={() => { setDetail(null); setDetailWebsite(null); }}
-                  className="rounded-lg p-1 text-[#737373] hover:bg-[#2A2A2A] hover:text-[#F5F5F5]"
+                  className="rounded-lg p-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
                   aria-label="Fermer"
                 >
                   <X className="h-5 w-5" />
@@ -389,33 +389,33 @@ export default function EntreprisesPage() {
               </div>
               <dl className="mt-4 space-y-2 text-sm">
                 <div>
-                  <dt className="text-[#525252]">SIRET</dt>
-                  <dd className="font-mono text-[#F5F5F5]">{detail.siret}</dd>
+                  <dt className="text-neutral-500">SIRET</dt>
+                  <dd className="font-mono text-neutral-900">{detail.siret}</dd>
                 </div>
                 <div>
-                  <dt className="text-[#525252]">Adresse</dt>
-                  <dd className="text-[#A3A3A3]">
+                  <dt className="text-neutral-500">Adresse</dt>
+                  <dd className="text-neutral-700">
                     {detail.adresse || `${detail.codePostal} ${detail.ville}`}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[#525252]">Activité (NAF)</dt>
-                  <dd className="text-[#A3A3A3]">{detail.libelleNaf || detail.naf}</dd>
+                  <dt className="text-neutral-500">Activité (NAF)</dt>
+                  <dd className="text-neutral-700">{detail.libelleNaf || detail.naf}</dd>
                 </div>
                 <div>
-                  <dt className="text-[#525252]">Taille</dt>
-                  <dd className="text-[#A3A3A3]">
+                  <dt className="text-neutral-500">Taille</dt>
+                  <dd className="text-neutral-700">
                     {detail.taille}
                     {detail.effectifLabel && detail.effectifLabel !== "Non renseigné" && (
-                      <span className="ml-2 text-[#737373]">· {detail.effectifLabel}</span>
+                      <span className="ml-2 text-neutral-500">· {detail.effectifLabel}</span>
                     )}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[#525252]">Site web</dt>
+                  <dt className="text-neutral-500">Site web</dt>
                   <dd className="mt-0.5">
                     {detailWebsite === "loading" && (
-                      <span className="text-xs text-[#737373] animate-pulse">Recherche en cours…</span>
+                      <span className="text-xs text-neutral-500 animate-pulse">Recherche en cours…</span>
                     )}
                     {detailWebsite && detailWebsite !== "loading" && (
                       <a
@@ -428,19 +428,19 @@ export default function EntreprisesPage() {
                       </a>
                     )}
                     {detailWebsite === null && (
-                      <span className="text-xs text-[#525252]">Non trouvé</span>
+                      <span className="text-xs text-neutral-500">Non trouvé</span>
                     )}
                   </dd>
                 </div>
                 {detail.annuaireUrl && (
                   <div>
-                    <dt className="text-[#525252]">Fiche officielle</dt>
+                    <dt className="text-neutral-500">Fiche officielle</dt>
                     <dd>
                       <a
                         href={detail.annuaireUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#737373] text-xs underline-offset-2 hover:underline"
+                        className="text-xs text-neutral-600 underline-offset-2 hover:underline"
                       >
                         Annuaire des Entreprises →
                       </a>
@@ -465,20 +465,20 @@ export default function EntreprisesPage() {
         {/* Panneau Ma sélection */}
         {selectionOpen && (
           <div
-            className="fixed inset-0 z-50 flex justify-end bg-black/60"
+            className="fixed inset-0 z-50 flex justify-end bg-black/40"
             role="dialog"
             aria-modal
             aria-labelledby="selection-title"
           >
-            <div className="flex h-full w-full max-w-md flex-col border-l border-[#2A2A2A] bg-[#1A1A1A] shadow-2xl">
-              <div className="flex items-center justify-between border-b border-[#2A2A2A] px-4 py-4">
-                <h2 id="selection-title" className="text-lg font-bold text-[#F5F5F5]">
+            <div className="flex h-full w-full max-w-md flex-col border-l border-neutral-200 bg-white shadow-xl">
+              <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-4">
+                <h2 id="selection-title" className="text-lg font-bold text-neutral-900">
                   Ma sélection
                 </h2>
                 <button
                   type="button"
                   onClick={() => setSelectionOpen(false)}
-                  className="rounded-lg p-1 text-[#737373] hover:bg-[#2A2A2A]"
+                  className="rounded-lg p-1 text-neutral-500 hover:bg-neutral-100"
                   aria-label="Fermer"
                 >
                   <X className="h-5 w-5" />
@@ -486,16 +486,16 @@ export default function EntreprisesPage() {
               </div>
               <ul className="flex-1 overflow-y-auto p-4">
                 {selection.length === 0 ? (
-                  <p className="text-sm text-[#737373]">Aucune entreprise pour l’instant.</p>
+                  <p className="text-sm text-neutral-600">Aucune entreprise pour l’instant.</p>
                 ) : (
                   selection.map((e) => (
                     <li
                       key={e.siret}
-                      className="mb-3 flex items-start justify-between gap-2 rounded-xl border border-[#2A2A2A] bg-[#141414] p-3"
+                      className="mb-3 flex items-start justify-between gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3"
                     >
                       <div className="min-w-0">
-                        <p className="font-semibold text-[#F5F5F5]">{e.nom}</p>
-                        <p className="text-xs text-[#737373]">
+                        <p className="font-semibold text-neutral-900">{e.nom}</p>
+                        <p className="text-xs text-neutral-600">
                           {e.codePostal} {e.ville}
                         </p>
                       </div>

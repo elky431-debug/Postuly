@@ -52,11 +52,18 @@ export function CVDropZone({ profile, uploading, onFileChange }: CVDropZoneProps
   const atsScore = profile?.cv_score ?? 0;
 
   return (
-    <div id="cv" className="rounded-xl border border-neutral-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-4">
-        <h2 className="text-sm font-bold text-neutral-900">Mon CV</h2>
-        <Link href="/cv" className="text-xs font-medium text-orange-600 transition-opacity hover:opacity-80">
-          Page dédiée →
+    <div
+      id="cv"
+      className="overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
+    >
+      <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/40 px-5 py-4">
+        <h2 className="text-sm font-bold text-stone-900">Mon CV</h2>
+        <Link
+          href="/cv"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 transition hover:text-orange-700"
+        >
+          Page dédiée
+          <span aria-hidden>→</span>
         </Link>
       </div>
       <div className="p-5">
@@ -78,7 +85,7 @@ export function CVDropZone({ profile, uploading, onFileChange }: CVDropZoneProps
               </dl>
             </div>
 
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50/80 p-3">
+            <div className="rounded-xl border border-stone-200/80 bg-stone-50/60 p-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
                 Pièce jointe
               </p>
@@ -155,7 +162,7 @@ export function CVDropZone({ profile, uploading, onFileChange }: CVDropZoneProps
           </div>
         ) : (
           <label className="block cursor-pointer">
-            <div className="flex flex-col items-center gap-3 rounded-[10px] border border-dashed border-neutral-200 bg-neutral-50 px-6 py-10 text-center transition-colors duration-150 hover:border-orange-300 hover:bg-orange-50/40">
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-stone-300/90 bg-gradient-to-b from-stone-50 to-white px-6 py-12 text-center transition-all duration-200 hover:border-orange-300 hover:shadow-[0_0_0_4px_rgba(249,115,22,0.08)]">
               {uploading ? (
                 <Loader2 className="h-8 w-8 animate-spin text-neutral-400" aria-hidden />
               ) : (

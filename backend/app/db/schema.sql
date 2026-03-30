@@ -101,11 +101,24 @@ CREATE TABLE IF NOT EXISTS email_logs (
   sent_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Tokens Gmail (chiffrés côté app — AES-256-GCM avant insertion)
+CREATE TABLE IF NOT EXISTS gmail_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  access_token TEXT NOT NULL,
+  refresh_token TEXT NOT NULL,
+  token_expiry TIMESTAMPTZ,
+  gmail_email TEXT,
+  connected_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
 -- ============================================
 -- Row Level Security (RLS)
 -- ============================================
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gmail_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_logs ENABLE ROW LEVEL SECURITY;
@@ -122,6 +135,10 @@ DROP POLICY IF EXISTS "Users can update own applications" ON applications;
 DROP POLICY IF EXISTS "Users can view own email logs" ON email_logs;
 DROP POLICY IF EXISTS "Anyone can read companies" ON companies;
 DROP POLICY IF EXISTS "Anyone can read email contacts" ON email_contacts;
+DROP POLICY IF EXISTS "Users can view own gmail tokens" ON gmail_tokens;
+DROP POLICY IF EXISTS "Users can insert own gmail tokens" ON gmail_tokens;
+DROP POLICY IF EXISTS "Users can update own gmail tokens" ON gmail_tokens;
+DROP POLICY IF EXISTS "Users can delete own gmail tokens" ON gmail_tokens;
 
 -- Profiles : un user ne voit que son propre profil
 CREATE POLICY "Users can view own profile"
@@ -189,6 +206,23 @@ CREATE POLICY "Anyone can read email contacts"
   ON email_contacts FOR SELECT
   USING (true);
 
+-- Gmail : uniquement le propriétaire (les appels n8n passent par la service role, hors RLS)
+CREATE POLICY "Users can view own gmail tokens"
+  ON gmail_tokens FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own gmail tokens"
+  ON gmail_tokens FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own gmail tokens"
+  ON gmail_tokens FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own gmail tokens"
+  ON gmail_tokens FOR DELETE
+  USING (auth.uid() = user_id);
+
 -- Index pour les performances
 CREATE INDEX IF NOT EXISTS idx_campaigns_user_id ON campaigns(user_id);
 CREATE INDEX IF NOT EXISTS idx_applications_campaign_id ON applications(campaign_id);
@@ -197,3 +231,4 @@ CREATE INDEX IF NOT EXISTS idx_companies_siret ON companies(siret);
 CREATE INDEX IF NOT EXISTS idx_companies_city ON companies(city);
 CREATE INDEX IF NOT EXISTS idx_email_contacts_company_id ON email_contacts(company_id);
 CREATE INDEX IF NOT EXISTS idx_email_logs_application_id ON email_logs(application_id);
+CREATE INDEX IF NOT EXISTS idx_gmail_tokens_user_id ON gmail_tokens(user_id);

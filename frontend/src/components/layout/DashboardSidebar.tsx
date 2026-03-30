@@ -9,6 +9,8 @@ import {
   Settings,
   LogOut,
   Building2,
+  UserRound,
+  CreditCard,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
@@ -27,6 +29,9 @@ const navigation = [
     disabled: false,
   },
   { name: "Mon CV", href: "/cv", icon: FileText, badge: null, disabled: false },
+  { name: "Profil", href: "/dashboard/profil", icon: UserRound, badge: null, disabled: false },
+  { name: "Paramètres", href: "/dashboard/parametres", icon: Settings, badge: null, disabled: false },
+  { name: "Abonnement", href: "/dashboard/abonnement", icon: CreditCard, badge: null, disabled: false },
 ];
 
 function userDisplayName(user: User): string {
@@ -67,23 +72,25 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
   }
 
   return (
-    <aside className="flex min-h-screen w-[220px] min-w-[220px] flex-col border-r border-neutral-200 bg-white">
-      <div className="px-4 pb-2 pt-6">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
+    <aside className="flex min-h-screen w-[244px] min-w-[244px] flex-col border-r border-stone-200/90 bg-white shadow-[1px_0_0_rgba(15,23,42,0.04)]">
+      <div className="border-b border-stone-100 px-5 pb-4 pt-7">
+        <Link href="/dashboard" className="flex items-center gap-3 transition-opacity hover:opacity-90">
           <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold text-white"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white shadow-md shadow-orange-500/25"
             style={{ backgroundColor: ORANGE }}
           >
             P
           </div>
-          <span className="text-[15px] font-semibold text-neutral-900">Postuly</span>
+          <div className="flex flex-col">
+            <span className="text-[15px] font-semibold tracking-tight text-stone-900">Postuly</span>
+            <span className="mt-1 inline-flex w-fit items-center rounded-full bg-orange-50 px-2 py-px text-[10px] font-semibold uppercase tracking-wide text-orange-700 ring-1 ring-orange-200/60">
+              Beta
+            </span>
+          </div>
         </Link>
-        <span className="mt-2 inline-block rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700">
-          Beta
-        </span>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-0.5 px-2 py-4">
+      <nav className="flex w-full min-w-0 flex-1 flex-col gap-1 px-2.5 py-5">
         {navigation.map((item) => {
           const isActive =
             pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -97,63 +104,67 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
                 if (item.disabled) e.preventDefault();
               }}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors",
+                "block w-full min-w-0 rounded-xl border-l-[3px] text-[13px] no-underline transition-all duration-200",
                 item.disabled && "cursor-not-allowed opacity-40",
                 !item.disabled &&
                   !isActive &&
-                  "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900",
-                !item.disabled && isActive && "bg-orange-50 font-medium text-orange-600",
-                !item.disabled && !isActive && "text-neutral-600"
+                  "border-transparent text-stone-600 hover:bg-stone-50 hover:text-stone-900",
+                !item.disabled &&
+                  isActive &&
+                  "border-orange-500 bg-gradient-to-r from-orange-50 to-orange-50/30 font-semibold text-orange-700 shadow-sm shadow-orange-500/5",
+                !item.disabled && !isActive && "text-stone-600"
               )}
             >
-              <Icon
-                className={cn(
-                  "h-4 w-4 shrink-0",
-                  isActive && !item.disabled ? "text-orange-600" : "text-neutral-400"
-                )}
-                strokeWidth={2}
-                aria-hidden
-              />
-              <span className="flex-1 truncate">{item.name}</span>
-              {item.badge && (
-                <span
+              <span className="flex items-center gap-3 px-3 py-2">
+                <Icon
                   className={cn(
-                    "rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide",
-                    item.badge === "NEW" && "bg-orange-100 text-orange-700",
-                    item.badge === "V2" && "bg-neutral-100 text-neutral-500"
+                    "h-4 w-4 shrink-0",
+                    isActive && !item.disabled ? "text-orange-600" : "text-stone-400"
                   )}
-                >
-                  {item.badge}
-                </span>
-              )}
+                  strokeWidth={2}
+                  aria-hidden
+                />
+                <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                {item.badge && (
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+                      item.badge === "NEW" && "bg-orange-100 text-orange-700",
+                      item.badge === "V2" && "bg-neutral-100 text-neutral-500"
+                    )}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </span>
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-neutral-200 bg-white px-3 py-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-700">
+      <div className="border-t border-stone-100 bg-stone-50/50 px-3 py-4">
+        <div className="flex items-center gap-3 rounded-xl border border-stone-200/80 bg-white p-2.5 shadow-sm">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stone-100 to-stone-200/80 text-xs font-bold text-stone-700 ring-2 ring-white">
             {userInitials(user)}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-neutral-900">{userDisplayName(user)}</p>
-            <p className="truncate text-[10px] text-neutral-500" title={email}>
+            <p className="truncate text-xs font-semibold text-stone-900">{userDisplayName(user)}</p>
+            <p className="truncate text-[10px] text-stone-500" title={email}>
               {truncatedEmail}
             </p>
           </div>
           <Link
-            href="/settings"
-            className="shrink-0 rounded-md p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+            href="/dashboard/parametres"
+            className="shrink-0 rounded-lg p-2 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
             aria-label="Paramètres"
           >
-            <Settings className="h-3.5 w-3.5" strokeWidth={2} />
+            <Settings className="h-4 w-4" strokeWidth={2} />
           </Link>
         </div>
         <button
           type="button"
           onClick={handleLogout}
-          className="mt-3 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-neutral-500 transition-colors hover:bg-red-50 hover:text-red-600"
+          className="mt-3 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-stone-500 transition-colors hover:bg-red-50 hover:text-red-600"
         >
           <LogOut className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
           Déconnexion

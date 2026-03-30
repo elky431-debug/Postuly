@@ -26,7 +26,7 @@ export function SearchLoading({ active }: SearchLoadingProps) {
     <div className="flex flex-col items-center justify-center gap-6 py-16">
       <div className="relative flex h-24 w-24 items-center justify-center">
         <div
-          className="absolute inset-0 rounded-full border-2 border-[#2A2A2A]"
+          className="absolute inset-0 rounded-full border-2 border-neutral-200"
           aria-hidden
         />
         <div
@@ -34,17 +34,17 @@ export function SearchLoading({ active }: SearchLoadingProps) {
           style={{ animationDuration: "1.2s" }}
           aria-hidden
         />
-        <span className="text-2xl font-bold tabular-nums text-[#F5F5F5]" style={{ fontVariantNumeric: "tabular-nums" }}>
+        <span className="text-2xl font-bold tabular-nums text-neutral-900" style={{ fontVariantNumeric: "tabular-nums" }}>
           {seconds}s
         </span>
       </div>
       <div className="max-w-md text-center">
-        <p className="text-lg font-semibold text-[#F5F5F5]">On trouve vos entreprises…</p>
-        <p className="mt-2 text-sm leading-relaxed text-[#A3A3A3]">
+        <p className="text-lg font-semibold text-neutral-900">On trouve vos entreprises…</p>
+        <p className="mt-2 text-sm leading-relaxed text-neutral-600">
           Nous analysons des milliers d’entreprises pour vous proposer les plus pertinentes.
         </p>
       </div>
-      <div className="flex items-center gap-2 text-sm text-[#A3A3A3]">
+      <div className="flex items-center gap-2 text-sm text-neutral-600">
         <Loader2 className="h-4 w-4 animate-spin text-[#F97316]" aria-hidden />
         Analyse en cours…
       </div>

@@ -5,7 +5,7 @@ import type { Campaign } from "@/lib/types";
 import { CONTRACT_LABELS } from "@/lib/utils";
 
 const ORANGE = "#F97316";
-const BD = "#F3F4F6";
+const BD = "#E7E5E4";
 
 function statusMeta(status: Campaign["status"]): { label: string; className: string } {
   switch (status) {
@@ -42,7 +42,7 @@ export function CampaignTable({ campaigns, onRowClick }: CampaignTableProps) {
   if (campaigns.length === 0) {
     return (
       <div className="py-14 text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-100 ring-1 ring-neutral-200">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 ring-1 ring-stone-200/80">
           <Rocket className="h-6 w-6 text-neutral-400" strokeWidth={1.75} aria-hidden />
         </div>
         <p className="text-sm font-medium text-neutral-800">Aucune campagne pour l’instant</p>

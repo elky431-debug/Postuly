@@ -249,32 +249,44 @@ export function DashboardPage() {
 
   return (
     <motion.div
-      className="mx-auto max-w-[1600px] px-10 pb-16 pt-8"
+      className="mx-auto max-w-[1600px] px-5 pb-20 pt-10 sm:px-8 lg:px-12"
       variants={container}
       initial="hidden"
       animate="show"
     >
-      <motion.header variants={item} className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-neutral-900">
-            Bonjour{userName ? `, ${userName}` : ""} <span aria-hidden>👋</span>
+      <motion.header
+        variants={item}
+        className="mb-12 flex flex-col gap-6 border-b border-stone-200/80 pb-10 sm:flex-row sm:items-end sm:justify-between"
+      >
+        <div className="space-y-3">
+          <h1 className="text-3xl font-bold leading-[1.15] tracking-tight text-stone-900 sm:text-[2rem]">
+            Bonjour{userName ? `, ${userName}` : ""}{" "}
+            <span className="inline-block origin-bottom-right" aria-hidden>
+              👋
+            </span>
           </h1>
-          <p className="mt-1 text-[13px] text-neutral-500">
-            {todayPretty} · {sentThisWeek} candidature{sentThisWeek !== 1 ? "s" : ""} envoyée
-            {sentThisWeek !== 1 ? "s" : ""} cette semaine
+          <p className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-stone-600">
+            <span className="rounded-full bg-white px-3 py-1 font-medium text-stone-600 shadow-sm ring-1 ring-stone-200/80">
+              {todayPretty}
+            </span>
+            <span className="text-stone-400">·</span>
+            <span>
+              {sentThisWeek} candidature{sentThisWeek !== 1 ? "s" : ""} envoyée
+              {sentThisWeek !== 1 ? "s" : ""} cette semaine
+            </span>
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <Link
             href="#"
-            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-2 text-[13px] text-neutral-600 shadow-sm transition-colors hover:border-neutral-300 hover:text-neutral-900"
+            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-[13px] font-medium text-stone-600 shadow-sm transition hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900"
           >
             <BookOpen className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
             Guide de démarrage
           </Link>
           <Link
             href="/campaigns/new"
-            className="inline-flex items-center gap-2 rounded-lg bg-[#F97316] px-4 py-2 text-[13px] font-medium text-white shadow-[0_0_20px_rgba(249,115,22,0.2)] transition hover:bg-[#EA6C0A] hover:shadow-[0_0_32px_rgba(249,115,22,0.28)]"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-orange-500 to-orange-600 px-5 py-2.5 text-[13px] font-semibold text-white shadow-lg shadow-orange-500/30 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/35"
           >
             <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
             Nouvelle campagne
@@ -282,7 +294,7 @@ export function DashboardPage() {
         </div>
       </motion.header>
 
-      <motion.section variants={item} className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+      <motion.section variants={item} className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
         <StatCard
           label="Total candidatures"
           countTarget={stats.total}
@@ -318,7 +330,7 @@ export function DashboardPage() {
         />
       </motion.section>
 
-      <motion.section variants={item} className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-5 lg:gap-5">
+      <motion.section variants={item} className="mb-10 grid grid-cols-1 gap-5 lg:grid-cols-5 lg:gap-6">
         <div className="lg:col-span-3">
           <QuickStart steps={steps} done={done} doneCount={done.filter(Boolean).length} />
         </div>
@@ -327,24 +339,27 @@ export function DashboardPage() {
         </div>
       </motion.section>
 
-      <motion.section variants={item} className="mb-8 grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <motion.section variants={item} className="mb-10 grid grid-cols-1 gap-6 xl:grid-cols-2">
         <CVDropZone profile={profile} uploading={uploading} onFileChange={handleCvUpload} />
 
-        <div className="flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-4">
-            <h2 className="text-sm font-bold text-neutral-900">Campagnes actives</h2>
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+          <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/40 px-5 py-4">
+            <div>
+              <h2 className="text-sm font-bold text-stone-900">Campagnes actives</h2>
+              <p className="mt-0.5 text-[11px] text-stone-500">Volume d&apos;envois sur la période</p>
+            </div>
             <div className="flex items-center gap-2">
-              <div className="flex rounded-lg bg-neutral-100 p-0.5">
+              <div className="flex rounded-lg bg-stone-200/60 p-0.5 ring-1 ring-stone-200/80">
                 {(["7j", "30j"] as const).map((p) => (
                   <button
                     key={p}
                     type="button"
                     onClick={() => setChartPeriod(p)}
                     className={cn(
-                      "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                      "rounded-md px-3 py-1.5 text-xs font-semibold transition-all",
                       chartPeriod === p
-                        ? "bg-white text-orange-600 shadow-sm ring-1 ring-neutral-200/80"
-                        : "text-neutral-500 hover:text-neutral-800"
+                        ? "bg-white text-orange-600 shadow-sm ring-1 ring-stone-200/90"
+                        : "text-stone-500 hover:text-stone-800"
                     )}
                   >
                     {p}
@@ -354,11 +369,11 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <div className="border-b border-neutral-100 px-5 py-5">
+          <div className="border-b border-stone-100 px-5 py-6">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-2xl font-bold tabular-nums tracking-tight text-neutral-900">{chartSum}</p>
-                <p className="mt-0.5 text-xs text-neutral-500">
+                <p className="text-3xl font-bold tabular-nums tracking-tight text-stone-900">{chartSum}</p>
+                <p className="mt-1 text-xs font-medium text-stone-500">
                   candidatures · {chartPeriod === "7j" ? "7 derniers jours" : "4 dernières semaines"}
                 </p>
               </div>
@@ -373,10 +388,10 @@ export function DashboardPage() {
             />
           </div>
 
-          <div className="border-t border-neutral-100 px-5 py-4">
+          <div className="border-t border-stone-100 bg-stone-50/30 px-5 py-4">
             <Link
               href="/campaigns/new"
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#F97316] py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#EA6C0A]"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-orange-500 to-orange-600 py-3.5 text-sm font-semibold text-white shadow-md shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700"
             >
               <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
               Créer ma première campagne

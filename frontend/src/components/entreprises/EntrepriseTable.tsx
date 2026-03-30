@@ -27,38 +27,38 @@ export function EntrepriseTable({
   const allChecked = rows.length > 0 && rows.every((r) => checkedSirets.has(r.siret));
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-[#2A2A2A]">
+    <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
       <table className="w-full min-w-[900px] border-collapse text-left text-sm">
         <thead>
-          <tr className="border-b border-[#1F1F1F] bg-[#141414]">
+          <tr className="border-b border-neutral-200 bg-neutral-50">
             <th className="px-3 py-3">
               <input
                 type="checkbox"
                 checked={allChecked}
                 onChange={(e) => onToggleAll(e.target.checked)}
-                className="h-4 w-4 rounded border-[#2A2A2A] bg-[#141414] text-[#F97316]"
+                className="h-4 w-4 rounded border-neutral-300 bg-white text-[#F97316]"
                 aria-label="Tout sélectionner"
               />
             </th>
-            <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
+            <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
               Entreprise
             </th>
-            <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
+            <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
               Score
             </th>
-            <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
+            <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
               Localisation
             </th>
-            <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
+            <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
               Domaine
             </th>
-            <th className="px-3 py-3 text-center text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
+            <th className="px-3 py-3 text-center text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
               Tranche eff.
             </th>
-            <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
+            <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
               Taille
             </th>
-            <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
+            <th className="px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
               Actions
             </th>
           </tr>

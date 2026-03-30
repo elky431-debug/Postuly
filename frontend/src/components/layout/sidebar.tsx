@@ -9,6 +9,8 @@ import {
   Settings,
   LogOut,
   Building2,
+  UserRound,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
@@ -27,6 +29,9 @@ const navigation = [
     disabled: false,
   },
   { name: "Mon CV", href: "/cv", icon: FileText, badge: null, disabled: false },
+  { name: "Profil", href: "/dashboard/profil", icon: UserRound, badge: null, disabled: false },
+  { name: "Paramètres", href: "/dashboard/parametres", icon: Settings, badge: null, disabled: false },
+  { name: "Abonnement", href: "/dashboard/abonnement", icon: CreditCard, badge: null, disabled: false },
 ];
 
 export function Sidebar() {
@@ -56,7 +61,7 @@ export function Sidebar() {
         </Link>
       </div>
 
-      <nav className="flex-1 space-y-0.5 px-3 py-5">
+      <nav className="flex flex-1 flex-col gap-0.5 px-2 py-5">
         {navigation.map((item) => {
           const isActive =
             pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -70,7 +75,7 @@ export function Sidebar() {
                 if (item.disabled) e.preventDefault();
               }}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] transition-colors",
+                "flex w-full min-w-0 items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] transition-colors",
                 item.disabled && "cursor-not-allowed opacity-50",
                 !item.disabled && !isActive && "text-stone-600 hover:bg-stone-50",
                 isActive && !item.disabled && "bg-orange-50 font-medium text-orange-600"
@@ -94,10 +99,10 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="space-y-0.5 border-t px-3 py-4" style={{ borderColor: BORDER }}>
+      <div className="flex flex-col gap-0.5 border-t px-2 py-4" style={{ borderColor: BORDER }}>
         <Link
-          href="/settings"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] text-stone-600 transition-colors hover:bg-stone-50"
+          href="/dashboard/parametres"
+          className="flex w-full min-w-0 items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] text-stone-600 transition-colors hover:bg-stone-50"
         >
           <Settings className="h-4 w-4 shrink-0" strokeWidth={2} />
           Paramètres
@@ -105,7 +110,7 @@ export function Sidebar() {
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[14px] text-stone-600 transition-colors hover:bg-red-50 hover:text-red-600"
+          className="flex w-full min-w-0 items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[14px] text-stone-600 transition-colors hover:bg-red-50 hover:text-red-600"
         >
           <LogOut className="h-4 w-4 shrink-0" strokeWidth={2} />
           Déconnexion

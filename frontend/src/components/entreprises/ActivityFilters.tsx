@@ -26,9 +26,9 @@ export function ActivityFilters({
   if (activities.length === 0 && tailleOptions.length === 0) return null;
 
   return (
-    <div className="grid gap-8 border-t border-[#1F1F1F] pt-6 lg:grid-cols-2">
+    <div className="grid gap-8 border-t border-neutral-200 pt-6 lg:grid-cols-2">
       <div>
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
           Activités
         </p>
         <ul className="max-h-48 space-y-2 overflow-y-auto pr-1 text-sm">
@@ -38,12 +38,12 @@ export function ActivityFilters({
               <li key={key}>
                 <label
                   className={cn(
-                    "flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/[0.04]",
-                    visible ? "text-[#F5F5F5]" : "text-[#525252]"
+                    "flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-neutral-50",
+                    visible ? "text-neutral-900" : "text-neutral-400"
                   )}
                 >
                   <Checkbox.Root
-                    className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border border-[#2A2A2A] data-[state=checked]:border-[#F97316] data-[state=checked]:bg-[#F97316]/20"
+                    className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border border-neutral-300 data-[state=checked]:border-[#F97316] data-[state=checked]:bg-orange-50"
                     checked={visible}
                     onCheckedChange={(c) => onActivityChecked(key, c === true)}
                   >
@@ -59,7 +59,7 @@ export function ActivityFilters({
         </ul>
       </div>
       <div>
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
           Tailles
         </p>
         <ul className="space-y-2 text-sm">
@@ -67,9 +67,9 @@ export function ActivityFilters({
             const visible = !excludedTailleKeys.has(key);
             return (
               <li key={key}>
-                <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/[0.04]">
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-neutral-50">
                   <Checkbox.Root
-                    className="flex h-4 w-4 items-center justify-center rounded border border-[#2A2A2A] data-[state=checked]:border-[#F97316] data-[state=checked]:bg-[#F97316]/20"
+                    className="flex h-4 w-4 items-center justify-center rounded border border-neutral-300 data-[state=checked]:border-[#F97316] data-[state=checked]:bg-orange-50"
                     checked={visible}
                     onCheckedChange={(c) => onTailleChecked(key, c === true)}
                   >
@@ -77,7 +77,7 @@ export function ActivityFilters({
                       <Check className="h-3 w-3 text-[#F97316]" strokeWidth={3} />
                     </Checkbox.Indicator>
                   </Checkbox.Root>
-                  <span className={cn("text-[#A3A3A3]", !visible && "line-through opacity-50")}>{label}</span>
+                  <span className={cn("text-neutral-700", !visible && "line-through opacity-50")}>{label}</span>
                 </label>
               </li>
             );

@@ -34,8 +34,8 @@ export function EntrepriseRow({
   return (
     <tr
       className={cn(
-        "border-b border-[#1F1F1F] transition-colors hover:bg-white/[0.03]",
-        selected && "bg-white/[0.02]"
+        "border-b border-neutral-100 transition-colors hover:bg-neutral-50",
+        selected && "bg-orange-50/50"
       )}
     >
       <td className="px-3 py-3">
@@ -43,20 +43,20 @@ export function EntrepriseRow({
           type="checkbox"
           checked={selected}
           onChange={() => onToggleRow(row.siret)}
-          className="h-4 w-4 rounded border-[#2A2A2A] bg-[#141414] text-[#F97316] focus:ring-[#F97316]/30"
+          className="h-4 w-4 rounded border-neutral-300 bg-white text-[#F97316] focus:ring-[#F97316]/30"
           aria-label={`Sélectionner ${row.nom}`}
         />
       </td>
       <td className="px-3 py-3">
-        <p className="font-semibold text-[#F5F5F5]">{row.nom}</p>
+        <p className="font-semibold text-neutral-900">{row.nom}</p>
       </td>
       <td className="px-3 py-3">
         <ScoreBadge score={row.score} />
       </td>
-      <td className="px-3 py-3 text-sm text-[#A3A3A3]">
+      <td className="px-3 py-3 text-sm text-neutral-600">
         {row.codePostal} {row.ville}
       </td>
-      <td className="px-3 py-3 text-sm text-[#A3A3A3]">
+      <td className="px-3 py-3 text-sm text-neutral-600">
         <span>{domaineShort}</span>
         {domaineIsTruncated && (
           <button
@@ -68,7 +68,7 @@ export function EntrepriseRow({
           </button>
         )}
       </td>
-      <td className="px-3 py-3 text-center text-xs tabular-nums text-[#737373]">{employes}</td>
+      <td className="px-3 py-3 text-center text-xs tabular-nums text-neutral-500">{employes}</td>
       <td className="px-3 py-3">
         <TaillePill label={row.taille} />
       </td>
@@ -85,7 +85,7 @@ export function EntrepriseRow({
           <button
             type="button"
             onClick={() => onVoir(row)}
-            className="inline-flex items-center gap-1 rounded-lg border border-[#2A2A2A] bg-[#2A2A2A] px-2.5 py-1 text-xs font-medium text-[#F5F5F5] transition hover:bg-[#333]"
+            className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-800 transition hover:bg-neutral-50"
           >
             <Eye className="h-3.5 w-3.5" aria-hidden />
             Voir

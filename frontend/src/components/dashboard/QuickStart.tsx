@@ -23,32 +23,39 @@ export function QuickStart({ steps, done, doneCount }: QuickStartProps) {
   const pct = (doneCount / 3) * 100;
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 shrink-0" style={{ color: ORANGE }} strokeWidth={2} aria-hidden />
-          <h2 className="text-sm font-bold text-neutral-900">Démarrage rapide</h2>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs tabular-nums text-neutral-500">{doneCount} / 3 étapes</span>
-          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-neutral-100">
-            <div
-              className="h-full rounded-full transition-all duration-700 ease-out"
-              style={{ width: `${pct}%`, backgroundColor: ORANGE }}
-            />
+    <div className="overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+      <div className="border-b border-stone-100 bg-gradient-to-br from-orange-50/80 via-white to-stone-50/30 px-5 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-orange-100">
+              <Zap className="h-4 w-4 shrink-0" style={{ color: ORANGE }} strokeWidth={2} aria-hidden />
+            </span>
+            <div>
+              <h2 className="text-sm font-bold text-stone-900">Démarrage rapide</h2>
+              <p className="text-[11px] text-stone-500">Les 3 étapes pour automatiser tes envois</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium tabular-nums text-stone-600">{doneCount} / 3</span>
+            <div className="h-2 w-28 overflow-hidden rounded-full bg-stone-200/80">
+              <div
+                className="h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_12px_rgba(249,115,22,0.35)]"
+                style={{ width: `${pct}%`, backgroundColor: ORANGE }}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <ul className="divide-y divide-neutral-100">
+      <ul className="divide-y divide-stone-100">
         {steps.map((step, i) => (
           <li key={step.href}>
             <Link
               href={done[i] ? "#" : step.href}
               onClick={(e) => done[i] && e.preventDefault()}
               className={cn(
-                "group -mx-1 flex items-center gap-3 rounded-lg px-4 py-3 transition-colors",
-                !done[i] && "hover:bg-neutral-50",
+                "group flex items-center gap-3 px-4 py-3.5 transition-colors",
+                !done[i] && "hover:bg-stone-50/80",
                 done[i] && "cursor-default opacity-90"
               )}
             >
@@ -65,13 +72,13 @@ export function QuickStart({ steps, done, doneCount }: QuickStartProps) {
               <div className="min-w-0 flex-1">
                 <p
                   className={cn(
-                    "text-sm font-medium text-neutral-800",
-                    done[i] && "text-neutral-400 line-through"
+                    "text-sm font-medium text-stone-800",
+                    done[i] && "text-stone-400 line-through"
                   )}
                 >
                   {step.label}
                 </p>
-                <p className="mt-0.5 text-xs text-neutral-500">{step.desc}</p>
+                <p className="mt-0.5 text-xs text-stone-500">{step.desc}</p>
               </div>
               {!done[i] && (
                 <ChevronRight

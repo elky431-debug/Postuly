@@ -37,7 +37,7 @@ export function FilterChips({
   return (
     <div className="space-y-4">
       <div>
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
           Taille
         </p>
         <div className="flex flex-wrap gap-2">
@@ -47,8 +47,8 @@ export function FilterChips({
               className={cn(
                 "flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                 tailles.has(id)
-                  ? "border-[#F97316] bg-[#F97316]/20 text-[#F97316]"
-                  : "border-[#2A2A2A] bg-[#1A1A1A] text-[#737373]"
+                  ? "border-[#F97316] bg-orange-50 text-[#EA580C]"
+                  : "border-neutral-200 bg-neutral-50 text-neutral-600"
               )}
             >
               <Checkbox.Root
@@ -66,7 +66,7 @@ export function FilterChips({
         </div>
       </div>
       <div>
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
           Ancienneté
         </p>
         <div className="flex flex-wrap gap-2">
@@ -83,8 +83,8 @@ export function FilterChips({
               className={cn(
                 "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                 anciennete === id
-                  ? "border-[#F97316] bg-[#F97316]/20 text-[#F97316]"
-                  : "border-[#2A2A2A] bg-[#1A1A1A] text-[#737373] hover:text-[#A3A3A3]"
+                  ? "border-[#F97316] bg-orange-50 text-[#EA580C]"
+                  : "border-neutral-200 bg-neutral-50 text-neutral-600 hover:text-neutral-900"
               )}
             >
               {label}
