@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, createSupabaseFromBearer } from "@/lib/supabase/server";
 
+/** Aligné sur le backend : `company:companies`, `contact:email_contacts` (FK PostgREST). */
 type CandidatureRow = {
   id: string;
   cover_letter: string | null;
-  companies: { name: string } | { name: string }[] | null;
-  email_contacts: { email: string } | { email: string }[] | null;
+  company: { name: string } | { name: string }[] | null;
+  contact: { email: string } | { email: string }[] | null;
 };
 
 function premier<T extends object>(x: T | T[] | null | undefined): T | null {
@@ -15,8 +16,22 @@ function premier<T extends object>(x: T | T[] | null | undefined): T | null {
 
 /**
  * Envoie le lot de candidatures approuvées au workflow n8n (envoi Gmail espacé).
+ * Chemin dédié : évite le conflit avec FastAPI `GET/PATCH/DELETE /api/campaigns/{campaign_id}`
+ * quand NEXT_PUBLIC_BACKEND_URL pointe vers le backend (ex. POST /api/campaigns/launch → 405).
  */
 export async function POST(req: NextRequest) {
+  try {
+    return await postLaunchCampaign(req);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json(
+      { detail: `launch-campaign : ${msg}` },
+      { status: 500 }
+    );
+  }
+}
+
+async function postLaunchCampaign(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
   const user = await getUserFromRequest(token);
@@ -57,15 +72,18 @@ export async function POST(req: NextRequest) {
       `
       id,
       cover_letter,
-      companies ( name ),
-      email_contacts ( email )
+      company:companies ( name ),
+      contact:email_contacts ( email )
     `
     )
     .eq("campaign_id", campaignId)
     .eq("status", "approved");
 
   if (appErr) {
-    return NextResponse.json({ error: appErr.message }, { status: 500 });
+    return NextResponse.json(
+      { detail: `Candidatures (Supabase) : ${appErr.message}` },
+      { status: 400 }
+    );
   }
 
   const rows = (candidatures ?? []) as unknown as CandidatureRow[];
@@ -75,8 +93,8 @@ export async function POST(req: NextRequest) {
 
   const mapped = rows
     .map((c) => {
-      const contact = premier(c.email_contacts);
-      const company = premier(c.companies);
+      const contact = premier(c.contact);
+      const company = premier(c.company);
       const email = contact?.email?.trim();
       if (!email) return null;
       return {
@@ -128,6 +146,23 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  /* Le Kanban ne liste que sent / followed_up / rejected : sans passage à « sent »,
+   * les fiches restaient en « approved » (invisibles). On enregistre l’envoi dès que
+   * n8n accepte le lot ; le webhook update-status peut toujours raffiner ensuite. */
+  const sentAt = new Date().toISOString();
+  const applicationIds = mapped.map((m) => m.application_id);
+  const { error: sentErr } = await client
+    .from("applications")
+    .update({ status: "sent", sent_at: sentAt })
+    .in("id", applicationIds);
+
+  if (sentErr) {
+    return NextResponse.json(
+      { detail: `Mise à jour candidatures (statut envoyé) : ${sentErr.message}` },
+      { status: 500 }
+    );
+  }
+
   const { error: updErr } = await client
     .from("campaigns")
     .update({ status: "running" })
@@ -135,7 +170,10 @@ export async function POST(req: NextRequest) {
     .eq("user_id", user.id);
 
   if (updErr) {
-    return NextResponse.json({ error: updErr.message }, { status: 500 });
+    return NextResponse.json(
+      { detail: `Mise à jour campagne : ${updErr.message}` },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({
@@ -144,3 +182,4 @@ export async function POST(req: NextRequest) {
     message: `${mapped.length} e-mail(s) confié(s) à n8n (cadence définie dans le workflow).`,
   });
 }
+

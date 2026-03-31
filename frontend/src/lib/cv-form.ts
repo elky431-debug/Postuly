@@ -109,8 +109,12 @@ function asExperienceItems(raw: unknown, fallbackLines: string[]): CvExperienceF
       return {
         job_title: String(o.job_title ?? o.title ?? ""),
         company: String(o.company ?? ""),
-        start_date: String(o.start_date ?? ""),
-        end_date: String(o.end_date ?? ""),
+        start_date: String(
+          o.start_date ?? o.date_debut ?? o.debut ?? o.from ?? o.start ?? ""
+        ),
+        end_date: String(
+          o.end_date ?? o.date_fin ?? o.fin ?? o.to ?? o.end ?? ""
+        ),
         description: String(o.description ?? ""),
         is_current: Boolean(o.is_current ?? o.current),
       };
@@ -134,8 +138,12 @@ function asEducationItems(raw: unknown, fallbackLines: string[]): CvEducationFor
       return {
         diploma: String(o.diploma ?? ""),
         institution: String(o.institution ?? ""),
-        start_date: String(o.start_date ?? ""),
-        end_date: String(o.end_date ?? ""),
+        start_date: String(
+          o.start_date ?? o.date_debut ?? o.debut ?? o.from ?? o.start ?? ""
+        ),
+        end_date: String(
+          o.end_date ?? o.date_fin ?? o.fin ?? o.to ?? o.end ?? ""
+        ),
         in_progress: Boolean(o.in_progress ?? o.en_cours),
       };
     });

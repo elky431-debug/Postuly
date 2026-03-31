@@ -11,13 +11,20 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.join(__dirname),
   },
+  /**
+   * `fallback` : après les routes dynamiques (handlers dans app/api).
+   * Un tableau simple `return [...]` est traité comme `afterFiles` et s’applique
+   * avant les route handlers API → le proxy global écrasait nos routes Next.
+   */
   async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${backendProxy}/api/:path*`,
-      },
-    ];
+    return {
+      fallback: [
+        {
+          source: "/api/:path*",
+          destination: `${backendProxy}/api/:path*`,
+        },
+      ],
+    };
   },
 };
 

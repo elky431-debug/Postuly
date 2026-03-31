@@ -21,9 +21,9 @@ async def list_applications(
     """Liste les candidatures, avec filtres optionnels."""
     supabase = get_supabase_admin()
 
-    query = (
-        supabase.table("applications")
-        .select("*, company:companies(*), contact:email_contacts(*)")
+    query = supabase.table("applications").select(
+        "*, company:companies(*), contact:email_contacts(*), "
+        "campaign:campaigns(job_title, contract_type, location)"
     )
 
     if campaign_id:
@@ -57,7 +57,10 @@ async def get_application(application_id: UUID, user: CurrentUser) -> dict:
 
     response = (
         supabase.table("applications")
-        .select("*, company:companies(*), contact:email_contacts(*)")
+        .select(
+            "*, company:companies(*), contact:email_contacts(*), "
+            "campaign:campaigns(job_title, contract_type, location)"
+        )
         .eq("id", str(application_id))
         .single()
         .execute()
@@ -115,14 +118,22 @@ async def update_application(
     if not campaign.data or campaign.data["user_id"] != user["id"]:
         raise HTTPException(status_code=403, detail="Accès non autorisé")
 
-    response = (
+    upd = (
         supabase.table("applications")
         .update(update_data)
         .eq("id", str(application_id))
+        .select(
+            "*, company:companies(*), contact:email_contacts(*), "
+            "campaign:campaigns(job_title, contract_type, location)"
+        )
+        .single()
         .execute()
     )
 
-    return response.data[0]
+    if not upd.data:
+        raise HTTPException(status_code=404, detail="Candidature non trouvée")
+
+    return upd.data
 
 
 @router.post("/{application_id}/approve")

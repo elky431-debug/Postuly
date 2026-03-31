@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, Briefcase, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PostulyWordmark } from "@/components/brand/PostulyLogo";
 
 type ProfileType = "etudiant" | "jeune_actif";
 
@@ -59,8 +60,8 @@ export default function OnboardingPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-10">
-          <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-lg">P</span>
+          <div className="mb-6 flex justify-center">
+            <PostulyWordmark size="lg" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Bienvenue sur Postuly !

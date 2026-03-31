@@ -3,8 +3,15 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exception_handlers import (
+    http_exception_handler,
+    request_validation_exception_handler,
+)
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from postgrest.exceptions import APIError
 
 from app.config import get_settings
 from app.api.auth import router as auth_router
@@ -44,6 +51,33 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+
+@app.exception_handler(APIError)
+async def postgrest_error_handler(_request: Request, exc: APIError) -> JSONResponse:
+    """Remonte les erreurs PostgREST/Supabase en JSON lisible (plus de 500 opaque)."""
+    parts = [exc.message or "", exc.hint or "", exc.details or ""]
+    detail = " — ".join(p for p in parts if p).strip() or repr(exc)
+    logging.getLogger("uvicorn.error").warning("PostgREST: %s", detail)
+    return JSONResponse(
+        status_code=400,
+        content={"detail": f"Supabase : {detail}"},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Toute exception non gérée → JSON `detail` (plus de page HTML « Internal Server Error »)."""
+    if isinstance(exc, HTTPException):
+        return await http_exception_handler(request, exc)
+    if isinstance(exc, RequestValidationError):
+        return await request_validation_exception_handler(request, exc)
+    logging.getLogger("uvicorn.error").exception("Erreur non gérée")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"{type(exc).__name__}: {exc!s}"},
+    )
+
 
 app.add_middleware(
     CORSMiddleware,

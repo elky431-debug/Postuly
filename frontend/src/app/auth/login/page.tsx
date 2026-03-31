@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PostulyWordmark } from "@/components/brand/PostulyLogo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -90,11 +91,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">P</span>
-            </div>
-            <span className="text-2xl font-bold text-gray-900">Postuly</span>
+          <Link href="/" className="mb-6 inline-flex justify-center">
+            <PostulyWordmark size="lg" />
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Bon retour !</h1>
           <p className="text-gray-600 mt-1">Connecte-toi à ton compte</p>

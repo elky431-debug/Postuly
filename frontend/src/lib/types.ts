@@ -151,6 +151,12 @@ export interface Application {
   created_at: string;
   company?: Company | null;
   contact?: EmailContact | null;
+  /** Jointure campagne (API FastAPI) — poste, contrat, zone. */
+  campaign?: {
+    job_title: string;
+    contract_type: string;
+    location: string;
+  } | null;
 }
 
 export type ApplicationStatus =

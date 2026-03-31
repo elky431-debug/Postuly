@@ -45,7 +45,7 @@ export function ActivityFeed({ recentApps }: ActivityFeedProps) {
             <li className="flex items-start gap-3 px-5 py-3.5 transition-colors hover:bg-stone-50/80">
               <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-neutral-300" />
               <p className="flex-1 text-[13px] leading-relaxed text-neutral-500">
-                Crée ta première campagne de candidatures.
+                Ajoute des entreprises puis lance l’envoi depuis Ma sélection.
               </p>
               <span className="shrink-0 text-[11px] text-neutral-400">—</span>
             </li>

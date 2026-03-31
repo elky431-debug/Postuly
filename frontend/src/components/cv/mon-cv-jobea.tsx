@@ -4,7 +4,6 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
-  BarChart2,
   Briefcase,
   Award,
   Check,
@@ -1056,55 +1055,6 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
           </section>
         )}
 
-      {analysisPhase === "setup" &&
-        !coachResult &&
-        hasParsed &&
-        flowStep === "before_coach" && (
-          <section
-            id="before-coach-cta"
-            className="rounded-2xl border bg-white shadow-sm overflow-hidden scroll-mt-24"
-            style={{ borderColor: BD, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}
-          >
-            <div className="p-6 sm:p-8">
-              <div className="flex gap-3">
-                <span
-                  className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full"
-                  style={{ background: ORANGE_LIGHT, color: ORANGE }}
-                  aria-hidden
-                >
-                  <BarChart2 className="h-5 w-5" strokeWidth={2} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <h2
-                    className="text-lg font-bold text-gray-900"
-                    style={{ fontFamily: "var(--font-syne)" }}
-                  >
-                    Analyse coach
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-2 leading-relaxed">
-                    Quand ton intitulé de poste et ton type de contrat sont renseignés, lance l’analyse pour
-                    obtenir une note sur 100 et des recommandations.
-                  </p>
-                  <button
-                    type="button"
-                    disabled={!coachPoste.trim() || !coachContrat || uploading}
-                    onClick={onStartAnalysis}
-                    className="mt-5 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold text-white shadow-md hover:shadow-lg transition-shadow disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ background: CTA_GRAD }}
-                  >
-                    Voir l’analyse de mon CV
-                  </button>
-                  {(!coachPoste.trim() || !coachContrat) && (
-                    <p className="text-xs text-amber-700 mt-3">
-                      Renseigne l’intitulé du poste et le type de contrat dans la carte ci-dessus.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
       {/* Après upload : vérification des champs extraits */}
       {hasParsed &&
         cv &&
@@ -1376,7 +1326,6 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
         !coachResult &&
         hasParsed &&
         flowStep !== "extracted_gate" &&
-        flowStep !== "before_coach" &&
         flowStep !== "verify" && (
         <div
           id="lancer-analyse-block"
@@ -1393,6 +1342,15 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
           </button>
           {(!coachPoste.trim() || !coachContrat) && hasParsed && (
             <p className="text-xs text-amber-700">Renseigne l’intitulé du poste et le type de contrat.</p>
+          )}
+          {flowStep === "before_coach" && (
+            <button
+              type="button"
+              onClick={() => onOpenCvInfos?.()}
+              className="text-sm font-medium text-[#FE6A2E] hover:underline"
+            >
+              Voir ou modifier les données extraites du CV
+            </button>
           )}
         </div>
       )}

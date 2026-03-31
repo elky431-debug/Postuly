@@ -1,6 +1,6 @@
 """Dépendances partagées entre les routes API."""
 
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import Depends, Header, HTTPException, status
 from supabase import Client
@@ -8,8 +8,15 @@ from supabase import Client
 from app.db.client import get_supabase_admin
 
 
-async def get_current_user(authorization: str = Header(...)) -> dict:
+async def get_current_user(
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+) -> dict:
     """Vérifie le JWT Supabase et retourne les infos utilisateur."""
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentification requise (header Authorization manquant)",
+        )
     if not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

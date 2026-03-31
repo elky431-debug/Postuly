@@ -81,7 +81,7 @@ export default function NewCampaignPage() {
     <AppLayout>
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <Link href="/campaigns">
+          <Link href="/dashboard/selections">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4" />
             </Button>
@@ -175,7 +175,7 @@ export default function NewCampaignPage() {
               )}
 
               <div className="flex justify-end gap-3 pt-2">
-                <Link href="/campaigns">
+                <Link href="/dashboard/selections">
                   <Button variant="secondary" type="button">
                     Annuler
                   </Button>

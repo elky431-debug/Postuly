@@ -31,71 +31,67 @@ def _build_prompt(
     job_title: str,
     contract_type: str,
 ) -> str:
-    """Construit le prompt adapté au type de contrat."""
+    """Construit le prompt de génération selon la charte produit."""
     cv_parsed = user_profile.get("cv_parsed", {})
-    profile_type = user_profile.get("profile_type", "jeune_actif")
+    full_name = (user_profile.get("full_name") or "").strip()
+    if full_name:
+        parts = full_name.split()
+        first_name = parts[0]
+        last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
+    else:
+        first_name = "Candidat"
+        last_name = ""
 
-    # Adapter le contexte au type de contrat
-    context_map = {
-        "stage": (
-            "C'est une candidature pour un stage. "
-            "Le ton doit être motivé et humble, mentionner la formation en cours, "
-            "les dates souhaitées et la durée du stage."
-        ),
-        "alternance": (
-            "C'est une candidature pour une alternance. "
-            "Mentionner le rythme école/entreprise, la formation suivie, "
-            "et montrer la motivation à apprendre en entreprise."
-        ),
-        "cdi": (
-            "C'est une candidature pour un CDI. "
-            "Le ton doit être professionnel et confiant, mettre en avant "
-            "les expériences et compétences concrètes."
-        ),
-        "cdd": (
-            "C'est une candidature pour un CDD. "
-            "Montrer la disponibilité immédiate et l'adaptabilité, "
-            "mettre en avant les compétences pertinentes."
-        ),
-    }
+    email = (
+        user_profile.get("email")
+        or cv_parsed.get("email")
+        or "non spécifié"
+    )
+    experiences = "\n".join(cv_parsed.get("experiences", [])[:6]) or "non spécifiées"
+    formations = "\n".join(cv_parsed.get("education", [])[:6]) or "non spécifiées"
+    skills = ", ".join(cv_parsed.get("skills", [])[:12]) or "non spécifiées"
+    languages = ", ".join(cv_parsed.get("languages", [])[:8]) or "non spécifiées"
 
-    contract_context = context_map.get(contract_type, context_map["cdi"])
+    company_name = company.get("name") or "Entreprise"
+    company_sector = company.get("naf_label") or company.get("naf_code") or "non spécifié"
+    city = company.get("city") or "non spécifiée"
 
-    skills = ", ".join(cv_parsed.get("skills", [])[:10]) or "non spécifiées"
-    experiences = "\n".join(cv_parsed.get("experiences", [])[:5]) or "non spécifiées"
+    return f"""Tu es un expert en recrutement français. Tu rédiges des lettres de motivation percutantes, naturelles et personnalisées.
 
-    return f"""Tu es un expert en rédaction de lettres de motivation en français.
-Génère une lettre de motivation professionnelle et personnalisée.
-
-CONTEXTE :
-{contract_context}
-
-CANDIDAT :
-- Nom : {user_profile.get('full_name', 'Candidat')}
-- Profil : {profile_type}
-- Compétences : {skills}
+## Profil du candidat
+- Nom : {first_name} {last_name}
+- Email : {email}
 - Expériences :
 {experiences}
+- Formations :
+{formations}
+- Compétences : {skills}
+- Langues : {languages}
 
-ENTREPRISE CIBLE :
-- Nom : {company.get('name', 'Entreprise')}
-- Secteur (code NAF) : {company.get('naf_code', 'Non spécifié')} — {company.get('naf_label', '')}
-- Taille : {company.get('size_range', 'Non spécifiée')}
-- Ville : {company.get('city', 'Non spécifiée')}
+## Candidature
+- Entreprise : {company_name}
+- Secteur : {company_sector}
+- Poste visé : {job_title}
+- Type de contrat : {contract_type}
+- Ville : {city}
 
-POSTE VISÉ : {job_title}
-TYPE DE CONTRAT : {contract_type.upper()}
+## Ton attendu selon le contrat
+- stage : enthousiaste et motivé, style étudiant sérieux, focus sur l'apprentissage
+- alternance : dynamique et concret, met en avant le rythme école/entreprise et les compétences en développement
+- CDI : professionnel et confiant, focus sur la valeur ajoutée immédiate et la projection long terme
+- CDD : réactif et opérationnel, disponibilité et adaptabilité mises en avant
 
-INSTRUCTIONS :
-1. La lettre doit faire 200-300 mots maximum
-2. Personnaliser avec le nom de l'entreprise et son secteur d'activité
-3. Mettre en valeur 2-3 compétences pertinentes du candidat
-4. Adapter le ton au type de contrat
-5. Structure : accroche → motivation → compétences → conclusion avec call-to-action
-6. Ne PAS utiliser de formules bateau ("je me permets de vous écrire...")
-7. Écrire directement la lettre, sans introduction ni explication
+## Instructions
+- Adopte le ton correspondant au type de contrat ci-dessus
+- Structure : accroche (1 phrase marquante) → pourquoi cette entreprise → ce que le candidat apporte → conclusion + appel à action
+- Longueur : 3 paragraphes, max 250 mots
+- Langue : français, vouvoiement
+- NE PAS inventer de détails absents du profil
+- NE PAS utiliser de formules bateau ("Je me permets de vous adresser ma candidature...")
+- Terminer par une formule de politesse sobre
+- Retourner UNIQUEMENT la lettre, sans commentaire ni balise
 
-Écris uniquement la lettre, rien d'autre."""
+Rédige maintenant la lettre de motivation."""
 
 
 async def _generate_with_anthropic(prompt: str, api_key: str) -> dict:

@@ -10,13 +10,14 @@ import {
   LogOut,
   Building2,
   BookmarkCheck,
+  UserRound,
+  CreditCard,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { useSelectionStore } from "@/store/selectionStore";
-
-const ORANGE = "#F97316";
+import { PostulyWordmark } from "@/components/brand/PostulyLogo";
 
 function userDisplayName(user: User): string {
   const meta = user.user_metadata as { full_name?: string } | undefined;
@@ -41,7 +42,7 @@ type DashboardSidebarProps = {
 };
 
 /**
- * Sidebar dashboard — fond blanc, bordures neutres, accent orange.
+ * Sidebar dashboard — fond blanc, onglet actif en bloc orange arrondi (texte/icônes blancs).
  */
 export function DashboardSidebar({ user }: DashboardSidebarProps) {
   const pathname = usePathname();
@@ -60,6 +61,9 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
       disabled: false,
     },
     { name: "Mon CV", href: "/cv", icon: FileText, badge: null, disabled: false },
+    { name: "Profil", href: "/dashboard/profil", icon: UserRound, badge: null, disabled: false },
+    { name: "Paramètres", href: "/dashboard/parametres", icon: Settings, badge: null, disabled: false },
+    { name: "Abonnement", href: "/dashboard/abonnement", icon: CreditCard, badge: null, disabled: false },
   ];
   const email = user.email ?? "";
   const truncatedEmail = email.length > 28 ? `${email.slice(0, 26)}…` : email;
@@ -71,69 +75,75 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
   }
 
   return (
-    <aside className="flex min-h-screen w-[244px] min-w-[244px] flex-col border-r border-stone-200/90 bg-white shadow-[1px_0_0_rgba(15,23,42,0.04)]">
-      <div className="border-b border-stone-100 px-5 pb-4 pt-7">
-        <Link href="/dashboard" className="flex items-center gap-3 transition-opacity hover:opacity-90">
-          <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white shadow-md shadow-orange-500/25"
-            style={{ backgroundColor: ORANGE }}
-          >
-            P
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[15px] font-semibold tracking-tight text-stone-900">Postuly</span>
-            <span className="mt-1 inline-flex w-fit items-center rounded-full bg-orange-50 px-2 py-px text-[10px] font-semibold uppercase tracking-wide text-orange-700 ring-1 ring-orange-200/60">
-              Beta
-            </span>
-          </div>
+    <aside className="flex min-h-screen w-[260px] min-w-[260px] flex-col border-r border-stone-200/80 bg-white">
+      <div className="shrink-0 border-b border-stone-100 bg-white px-5 pb-4 pt-7">
+        <Link
+          href="/dashboard"
+          prefetch
+          className="block min-w-0 transition-opacity hover:opacity-90"
+        >
+          <PostulyWordmark size="md" showBeta />
         </Link>
       </div>
 
-      <nav className="flex w-full min-w-0 flex-1 flex-col gap-1 px-2.5 py-5">
-        {navigation.map((item) => {
-          const isActive =
-            pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-          const Icon = item.icon;
+      {/* Fond blanc ; onglet actif = pastille orange pleine largeur (type ref. cyan → orange) */}
+      <nav className="flex min-h-0 min-w-0 flex-1 flex-col bg-white px-2 py-3">
+        <div className="flex min-h-0 flex-1 flex-col justify-start gap-1">
+          {navigation.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            const Icon = item.icon;
 
-          return (
-            <Link
-              key={item.name}
-              href={item.disabled ? "#" : item.href}
-              onClick={(e) => {
-                if (item.disabled) e.preventDefault();
-              }}
-              className={cn(
-                "block w-full min-w-0 rounded-xl border-l-[3px] text-[13px] no-underline transition-all duration-200",
-                item.disabled && "cursor-not-allowed opacity-40",
-                !item.disabled &&
-                  !isActive &&
-                  "border-transparent text-stone-600 hover:bg-stone-50 hover:text-stone-900",
-                !item.disabled &&
-                  isActive &&
-                  "border-orange-500 bg-gradient-to-r from-orange-50 to-orange-50/30 font-semibold text-orange-700 shadow-sm shadow-orange-500/5",
-                !item.disabled && !isActive && "text-stone-600"
-              )}
-            >
-              <Icon
+            return (
+              <Link
+                key={item.name}
+                href={item.disabled ? "#" : item.href}
+                prefetch={!item.disabled}
+                onClick={(e) => {
+                  if (item.disabled) e.preventDefault();
+                }}
                 className={cn(
-                  "h-4 w-4 shrink-0",
-                  isActive && !item.disabled ? "text-orange-600" : "text-neutral-400"
+                  "flex w-full min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] no-underline transition-all duration-150",
+                  item.disabled && "cursor-not-allowed opacity-40",
+                  !item.disabled &&
+                    !isActive &&
+                    "text-stone-700 hover:bg-stone-50 hover:text-stone-900",
+                  !item.disabled &&
+                    isActive &&
+                    "bg-gradient-to-r from-[#FE6A2E] to-[#FF8A3D] font-semibold text-white shadow-md shadow-orange-500/35",
+                  !item.disabled && !isActive && "text-stone-700"
                 )}
-                strokeWidth={2}
-                aria-hidden
-              />
-              <span className="flex-1 truncate">{item.name}</span>
-              {item.badge !== null && (
-                <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-bold text-white">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+              >
+                <Icon
+                  className={cn(
+                    "h-[18px] w-[18px] shrink-0",
+                    isActive && !item.disabled ? "text-white" : "text-stone-400"
+                  )}
+                  strokeWidth={2}
+                  aria-hidden
+                />
+                <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                {item.badge !== null && (
+                  <span
+                    className={cn(
+                      "inline-flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] font-bold leading-none tabular-nums",
+                      isActive
+                        ? "bg-white/25 text-white ring-1 ring-white/30"
+                        : "bg-orange-500 text-white"
+                    )}
+                    aria-hidden
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </nav>
 
-      <div className="border-t border-stone-100 bg-stone-50/50 px-3 py-4">
+      <div className="shrink-0 border-t border-stone-100 bg-white px-3 py-4">
         <div className="flex items-center gap-3 rounded-xl border border-stone-200/80 bg-white p-2.5 shadow-sm">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stone-100 to-stone-200/80 text-xs font-bold text-stone-700 ring-2 ring-white">
             {userInitials(user)}

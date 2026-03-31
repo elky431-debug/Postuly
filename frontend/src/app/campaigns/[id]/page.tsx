@@ -59,7 +59,7 @@ export default function CampaignDetailPage() {
       setCampaign(campaignData);
       setApplications(appData);
     } catch {
-      router.push("/campaigns");
+      router.push("/dashboard/selections");
     }
     setLoading(false);
   }, [params.id, router]);
@@ -93,7 +93,7 @@ export default function CampaignDetailPage() {
         success?: boolean;
         message?: string;
         nb_emails?: number;
-      }>("/api/campaigns/launch", {
+      }>("/api/n8n/launch-campaign", {
         method: "POST",
         token,
         body: { campaignId: campaign.id },
@@ -158,7 +158,7 @@ export default function CampaignDetailPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/campaigns">
+            <Link href="/dashboard/selections">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4" />
               </Button>

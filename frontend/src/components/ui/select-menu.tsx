@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 const ORANGE = "#FE6A2E";
@@ -27,6 +35,8 @@ type SelectMenuProps = {
 
 /**
  * Liste déroulante stylée Postuly (remplace le &lt;select&gt; natif).
+ * La liste est rendue en portail (`position: fixed`) pour ne pas être coupée par
+ * `overflow-auto` du layout dashboard.
  */
 export function SelectMenu({
   id: idProp,
@@ -44,16 +54,41 @@ export function SelectMenu({
   const btnId = idProp ?? `${autoId}-btn`;
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
 
   const selected = options.find((o) => o.value === value);
   const display = selected?.label ?? placeholder;
 
   const close = useCallback(() => setOpen(false), []);
 
+  const updatePosition = useCallback(() => {
+    if (!rootRef.current) return;
+    const r = rootRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 6, left: r.left, width: r.width });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    updatePosition();
+  }, [open, updatePosition]);
+
+  useEffect(() => {
+    if (!open) return;
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [open, updatePosition]);
+
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) close();
+      const t = e.target as Node;
+      if (rootRef.current?.contains(t) || listRef.current?.contains(t)) return;
+      close();
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
@@ -65,6 +100,66 @@ export function SelectMenu({
       document.removeEventListener("keydown", onKey);
     };
   }, [open, close]);
+
+  const listContent =
+    open &&
+    typeof document !== "undefined" &&
+    createPortal(
+      <ul
+        ref={listRef}
+        id={listId}
+        role="listbox"
+        aria-label={label}
+        className="max-h-60 overflow-auto rounded-xl border border-gray-100 bg-white py-1 shadow-lg ring-1 ring-black/[0.04]"
+        style={{
+          position: "fixed",
+          top: coords.top,
+          left: coords.left,
+          width: Math.max(coords.width, 160),
+          zIndex: 9999,
+          boxShadow: "0 12px 40px -12px rgba(254, 106, 46, 0.18)",
+        }}
+      >
+        {options.map((opt) => {
+          const isSelected = opt.value === value;
+          return (
+            <li key={opt.value === "" ? "__empty" : opt.value} role="presentation">
+              <button
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                className={cn(
+                  "flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm transition-colors",
+                  isSelected
+                    ? "bg-gradient-to-r from-[#FFF1E3] to-white font-medium text-gray-900"
+                    : "text-gray-700 hover:bg-gray-50"
+                )}
+                onClick={() => {
+                  onChange(opt.value);
+                  close();
+                }}
+              >
+                {isSelected ? (
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                    style={{
+                      background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_GOLD})`,
+                    }}
+                    aria-hidden
+                  >
+                    ✓
+                  </span>
+                ) : (
+                  <span className="w-5 shrink-0" aria-hidden />
+                )}
+                <span className="truncate">{opt.label}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>,
+      document.body
+    );
 
   return (
     <div ref={rootRef} className={cn("relative", className)}>
@@ -99,53 +194,7 @@ export function SelectMenu({
         </span>
       </button>
 
-      {open && (
-        <ul
-          id={listId}
-          role="listbox"
-          aria-label={label}
-          className="absolute z-50 mt-1.5 max-h-60 w-full overflow-auto rounded-xl border border-gray-100 bg-white py-1 shadow-lg ring-1 ring-black/[0.04]"
-          style={{ boxShadow: "0 12px 40px -12px rgba(254, 106, 46, 0.18)" }}
-        >
-          {options.map((opt) => {
-            const isSelected = opt.value === value;
-            return (
-              <li key={opt.value === "" ? "__empty" : opt.value} role="presentation">
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  className={cn(
-                    "flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm transition-colors",
-                    isSelected
-                      ? "bg-gradient-to-r from-[#FFF1E3] to-white font-medium text-gray-900"
-                      : "text-gray-700 hover:bg-gray-50"
-                  )}
-                  onClick={() => {
-                    onChange(opt.value);
-                    close();
-                  }}
-                >
-                  {isSelected ? (
-                    <span
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                      style={{
-                        background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_GOLD})`,
-                      }}
-                      aria-hidden
-                    >
-                      ✓
-                    </span>
-                  ) : (
-                    <span className="w-5 shrink-0" aria-hidden />
-                  )}
-                  <span className="truncate">{opt.label}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {listContent}
     </div>
   );
 }

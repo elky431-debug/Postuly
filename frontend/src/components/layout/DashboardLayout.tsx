@@ -12,40 +12,63 @@ type DashboardLayoutProps = {
 };
 
 /**
+ * Session en mémoire entre les navigations : évite l’écran plein « chargement »
+ * à chaque clic dans la sidebar (chaque page remonte ce layout).
+ */
+let dashboardUserCache: User | null = null;
+let dashboardAuthReady = false;
+
+/**
  * Layout dashboard : sidebar, zone principale fond chaud, police Geist.
  */
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(() => dashboardUserCache);
+  const [loading, setLoading] = useState(() => !dashboardAuthReady);
 
   useEffect(() => {
     const supabase = createClient();
 
-    async function load() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/");
-        return;
-      }
-      setUser(user);
+    /* Cache navigateur → affichage immédiat sans spinner entre les pages */
+    if (dashboardAuthReady && dashboardUserCache) {
+      setUser(dashboardUserCache);
       setLoading(false);
+    } else {
+      void supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session?.user) {
+          dashboardUserCache = null;
+          dashboardAuthReady = true;
+          setUser(null);
+          setLoading(false);
+          router.push("/");
+          return;
+        }
+        dashboardUserCache = session.user;
+        dashboardAuthReady = true;
+        setUser(session.user);
+        setLoading(false);
+      });
     }
-
-    void load();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) router.push("/");
-      else setUser(session.user);
+      if (!session?.user) {
+        dashboardUserCache = null;
+        dashboardAuthReady = false;
+        setUser(null);
+        router.push("/");
+        return;
+      }
+      dashboardUserCache = session.user;
+      dashboardAuthReady = true;
+      setUser(session.user);
     });
 
     return () => subscription.unsubscribe();
   }, [router]);
 
+  /* Premier chargement seulement : pas de flash entre les pages une fois la session connue */
   if (loading || !user) {
     return (
       <div

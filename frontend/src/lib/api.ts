@@ -1,6 +1,6 @@
 /**
  * Base URL de l’API FastAPI.
- * Vide = requêtes relatives `/api/...` (proxy Next → backend, recommandé en local pour Safari / CORS).
+ * Vide = requêtes relatives `/api/...` (routes Next puis fallback proxy vers FastAPI ; voir next.config).
  */
 function getApiBaseUrl(): string {
   const raw = process.env.NEXT_PUBLIC_BACKEND_URL?.trim();
@@ -9,6 +9,30 @@ function getApiBaseUrl(): string {
 }
 
 const API_BASE = getApiBaseUrl();
+
+/** Routes implémentées par Next uniquement — toujours en URL relative (même si NEXT_PUBLIC_BACKEND_URL est défini). */
+function isNextOnlyApiPath(path: string): boolean {
+  return (
+    path.startsWith("/api/n8n/") ||
+    path.startsWith("/api/oauth/") ||
+    path.startsWith("/api/emails/") ||
+    path.startsWith("/api/entreprises/") ||
+    path.startsWith("/api/applications/update-status")
+  );
+}
+
+function resolveApiUrl(path: string): string {
+  if (isNextOnlyApiPath(path)) {
+    return path;
+  }
+  /* Navigateur : toujours URL relative → même origine (Next). Évite le court-circuit
+   * vers FastAPI via NEXT_PUBLIC_BACKEND_URL qui, avec le rewrite / redirections,
+   * peut provoquer l’absence d’`Authorization` côté uvicorn (ex. Kanban). */
+  if (typeof window !== "undefined") {
+    return path;
+  }
+  return `${API_BASE}${path}`;
+}
 
 /** Erreurs réseau (Safari : « Load failed », Chrome : « Failed to fetch »). */
 function toNetworkError(cause: unknown): Error {
@@ -30,52 +54,86 @@ function toNetworkError(cause: unknown): Error {
 async function parseErrorResponse(response: Response): Promise<string> {
   const status = response.status;
   const ct = response.headers.get("content-type") || "";
+  /* Une seule lecture du corps (json() puis text() cassait l’affichage du détail). */
+  const raw = await response.text().catch(() => "");
 
-  if (ct.includes("application/json")) {
-    const body = await response.json().catch(() => null);
-    if (body && typeof body.detail === "string") {
-      const d = body.detail as string;
-      if (/^internal server error$/i.test(d.trim())) {
-        return (
-          "Erreur serveur (500). Lance l’API (backend/run-dev.sh), vérifie backend/.env, " +
-          "consulte le terminal uvicorn."
-        );
+  /* Proxy Next ou FastAPI : parfois `detail` en JSON sans Content-Type fiable. */
+  if (raw.trim().startsWith("{")) {
+    try {
+      const body = JSON.parse(raw) as Record<string, unknown>;
+      if (typeof body.detail === "string") {
+        return body.detail;
       }
-      return d;
-    }
-    if (body && Array.isArray(body.detail)) {
-      return body.detail.map((x: { msg?: string }) => x.msg || JSON.stringify(x)).join(" ; ");
+      if (typeof body.error === "string" && typeof body.detail === "string") {
+        return `${body.error} — ${body.detail}`;
+      }
+      if (typeof body.error === "string") {
+        return body.error;
+      }
+    } catch {
+      /* continuer */
     }
   }
 
-  const text = await response.text().catch(() => "");
-  /* Réponses génériques (Next/FastAPI) → message actionnable */
+  if (ct.includes("application/json") && raw.trim()) {
+    try {
+      const body = JSON.parse(raw) as Record<string, unknown>;
+      if (typeof body.detail === "string") {
+        const d = body.detail;
+        if (status === 500 && /^internal server error$/i.test(d.trim())) {
+          return (
+            "Erreur serveur (500). Vérifie backend/.env (SUPABASE_*) et le terminal uvicorn " +
+            "(trace Python au moment du clic)."
+          );
+        }
+        return d;
+      }
+      if (Array.isArray(body.detail)) {
+        return body.detail.map((x: { msg?: string }) => x.msg || JSON.stringify(x)).join(" ; ");
+      }
+      if (typeof body.error === "string" && typeof body.detail === "string") {
+        return `${body.error} — ${body.detail}`;
+      }
+      if (typeof body.error === "string") {
+        return body.error;
+      }
+    } catch {
+      /* JSON invalide → utiliser raw plus bas */
+    }
+  }
+
   if (status === 500) {
-    if (/internal server error/i.test(text)) {
+    if (/internal server error/i.test(raw)) {
       return (
-        "Erreur serveur (500). Lance l’API : cd backend && bash run-dev.sh ; " +
-        "vérifie SUPABASE_* dans backend/.env ; regarde les logs uvicorn."
+        "Erreur serveur (500). Vérifie SUPABASE_* dans backend/.env ; regarde le terminal uvicorn " +
+        "(trace au moment du clic)."
       );
     }
+    if (raw.length > 0 && raw.length < 800 && !raw.trim().startsWith("<")) {
+      return raw;
+    }
+    return (
+      "Erreur serveur (500). L’API répond : regarde le terminal uvicorn pour la trace Python " +
+      "(souvent Supabase ou schéma BDD)."
+    );
   }
-  /* Next proxy quand FastAPI est arrêté renvoie souvent du HTML ou 502 sans JSON. */
   if (status === 502 || status === 503 || status === 504) {
     return (
       "L’API FastAPI ne répond pas (port 8000). Lance : cd backend && bash run-dev.sh " +
       "puis recharge la page."
     );
   }
-  if (text.length > 0 && text.length < 400 && !text.trim().startsWith("<")) {
-    return text;
+  if (raw.length > 0 && raw.length < 400 && !raw.trim().startsWith("<")) {
+    return raw;
   }
-  return `Erreur HTTP ${status} — vérifie que uvicorn tourne sur le port 8000.`;
+  return `Erreur HTTP ${status}. Si besoin, consulte les logs uvicorn (backend).`;
 }
 
 async function apiFetch(
   path: string,
   init?: RequestInit
 ): Promise<Response> {
-  const url = `${API_BASE}${path}`;
+  const url = resolveApiUrl(path);
   try {
     return await fetch(url, init);
   } catch (e) {

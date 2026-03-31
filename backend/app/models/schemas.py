@@ -178,6 +178,15 @@ class EmailContactResponse(BaseModel):
 
 # ─── Applications ────────────────────────────────────────
 
+
+class CampaignBrief(BaseModel):
+    """Champs campagne utiles au Kanban / prévisualisation."""
+
+    job_title: str = ""
+    contract_type: Optional[str] = None
+    location: str = ""
+
+
 class ApplicationResponse(BaseModel):
     id: UUID
     campaign_id: UUID
@@ -191,6 +200,7 @@ class ApplicationResponse(BaseModel):
     created_at: datetime
     company: Optional[CompanyResponse] = None
     contact: Optional[EmailContactResponse] = None
+    campaign: Optional[CampaignBrief] = None
 
 
 class ApplicationUpdate(BaseModel):
@@ -223,5 +233,44 @@ class CampaignLaunchResponse(BaseModel):
     campaign_id: UUID
     companies_found: int
     emails_found: int
+    applications_created: int
+    message: str
+
+
+# ─── Campagne depuis Ma sélection (entreprises + contacts déjà trouvés) ───────
+
+
+class SelectionContactIn(BaseModel):
+    email: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    position: Optional[str] = None
+    department: Optional[str] = None
+    confidence: Optional[int] = Field(default=0, ge=0, le=100)
+
+
+class SelectionDestinationIn(BaseModel):
+    siret: str = Field(..., min_length=9)
+    nom: str = Field(..., min_length=1)
+    ville: str = ""
+    code_postal: str = ""
+    naf: str = ""
+    libelle_naf: Optional[str] = None
+    domaine: str = ""
+    taille: str = ""
+    contact: SelectionContactIn
+
+
+class CampaignFromSelectionBody(BaseModel):
+    """Crée une campagne + candidatures approuvées (lettres IA) pour n8n."""
+
+    destinations: list[SelectionDestinationIn] = Field(..., min_length=1)
+    job_title: Optional[str] = Field(None, max_length=200)
+    location: Optional[str] = Field(None, max_length=200)
+    contract_type: Optional[str] = Field(None, pattern="^(stage|alternance|cdi|cdd)$")
+
+
+class CampaignFromSelectionResponse(BaseModel):
+    campaign_id: UUID
     applications_created: int
     message: str

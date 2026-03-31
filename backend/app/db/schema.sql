@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS companies (
   website_url TEXT,
   latitude DOUBLE PRECISION,
   longitude DOUBLE PRECISION,
+  selected BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -70,6 +71,10 @@ CREATE TABLE IF NOT EXISTS email_contacts (
   email TEXT NOT NULL,
   source TEXT CHECK (source IN ('scraped', 'guessed', 'manual')),
   verified BOOLEAN DEFAULT FALSE,
+  name TEXT,
+  role TEXT,
+  department TEXT,
+  confidence INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

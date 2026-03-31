@@ -210,8 +210,22 @@ def _coerce_experience_items(raw: Any) -> list[dict[str, Any]]:
             {
                 "job_title": title,
                 "company": company,
-                "start_date": _clip_str(x.get("start_date"), 80),
-                "end_date": _clip_str(x.get("end_date"), 80),
+                "start_date": _clip_str(
+                    x.get("start_date")
+                    or x.get("date_debut")
+                    or x.get("debut")
+                    or x.get("from")
+                    or x.get("start"),
+                    80,
+                ),
+                "end_date": _clip_str(
+                    x.get("end_date")
+                    or x.get("date_fin")
+                    or x.get("fin")
+                    or x.get("to")
+                    or x.get("end"),
+                    80,
+                ),
                 "description": _clip_str(x.get("description"), 4000),
                 "is_current": bool(x.get("is_current") or x.get("current")),
             }
@@ -234,8 +248,22 @@ def _coerce_education_items(raw: Any) -> list[dict[str, Any]]:
                 "institution": _clip_str(
                     x.get("institution") or x.get("school") or x.get("etablissement"), 300
                 ),
-                "start_date": _clip_str(x.get("start_date"), 80),
-                "end_date": _clip_str(x.get("end_date"), 80),
+                "start_date": _clip_str(
+                    x.get("start_date")
+                    or x.get("date_debut")
+                    or x.get("debut")
+                    or x.get("from")
+                    or x.get("start"),
+                    80,
+                ),
+                "end_date": _clip_str(
+                    x.get("end_date")
+                    or x.get("date_fin")
+                    or x.get("fin")
+                    or x.get("to")
+                    or x.get("end"),
+                    80,
+                ),
                 "in_progress": bool(x.get("in_progress") or x.get("en_cours")),
             }
         )

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { AppLayout } from "@/components/layout/app-layout";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MonCvJobeaExperience } from "@/components/cv/mon-cv-jobea";
 import { api, apiUpload } from "@/lib/api";
 import {
@@ -481,7 +481,7 @@ export default function CvPage() {
       });
     }
     markCoachCacheViewed(uid);
-    router.push("/campaigns");
+    router.push("/dashboard/selections");
   }
 
   function restoreCoachFromCache() {
@@ -499,9 +499,9 @@ export default function CvPage() {
   useEffect(() => () => stopProgressTimer(), []);
 
   return (
-    <AppLayout>
+    <DashboardLayout>
       <div
-        className="min-h-[calc(100vh-4rem)] -mx-6 -my-8 px-6 py-8"
+        className="min-h-[calc(100vh-4rem)] px-5 pb-20 pt-10 sm:px-8 lg:px-12"
         style={{ background: "#F7F6F3" }}
       >
         {profileLoad === "loading" && (
@@ -590,6 +590,6 @@ export default function CvPage() {
           removingCv={removingCv}
         />
       </div>
-    </AppLayout>
+    </DashboardLayout>
   );
 }

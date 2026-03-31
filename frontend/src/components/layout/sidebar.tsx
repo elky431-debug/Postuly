@@ -14,8 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
-
-const ORANGE = "#F97316";
+import { PostulyWordmark } from "@/components/brand/PostulyLogo";
 const BORDER = "#E7E5E4";
 
 const navigation = [
@@ -50,14 +49,8 @@ export function Sidebar() {
       style={{ borderColor: BORDER }}
     >
       <div className="flex h-16 items-center border-b px-5" style={{ borderColor: BORDER }}>
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white"
-            style={{ backgroundColor: ORANGE }}
-          >
-            P
-          </div>
-          <span className="text-lg font-semibold tracking-tight text-[#1C1917]">Postuly</span>
+        <Link href="/dashboard" className="block min-w-0">
+          <PostulyWordmark size="md" />
         </Link>
       </div>
 

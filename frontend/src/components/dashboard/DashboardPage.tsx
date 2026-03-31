@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   BarChart3,
+  BookmarkCheck,
   BookOpen,
   Calendar,
   CheckCircle,
@@ -232,18 +233,18 @@ export function DashboardPage() {
 
   const quickActions: QuickActionItem[] = [
     { Icon: RefreshCw, label: "Activer relances auto", sub: "J+5 si pas de réponse", href: "/relances" },
-    { Icon: Wand2, label: "Générer une lettre IA", sub: "Personnalisée par entreprise", href: "/campaigns/new" },
+    { Icon: Wand2, label: "Générer une lettre IA", sub: "Depuis ta sélection d’entreprises", href: "/dashboard/entreprises" },
     { Icon: Search, label: "Chercher des offres", sub: "France Travail + SIRENE", href: "/offres" },
     { Icon: BarChart3, label: "Voir rapport hebdo", sub: "Stats de la semaine", href: "/dashboard" },
   ];
 
   const steps = [
     { label: "Uploader ton CV", desc: "Analyse ATS automatique · score instantané", href: "/cv" },
-    { label: "Créer ta première campagne", desc: "Définis le poste, la zone et le contrat", href: "/campaigns/new" },
+    { label: "Sélectionner des entreprises", desc: "Recherche INSEE + emails Hunter / scrap", href: "/dashboard/entreprises" },
     {
-      label: "Envoyer tes premières candidatures",
-      desc: "L'IA rédige et envoie depuis ton Gmail",
-      href: "/campaigns",
+      label: "Lancer les candidatures",
+      desc: "Lettres IA + envoi Gmail via n8n depuis Ma sélection",
+      href: "/dashboard/selections",
     },
   ];
 
@@ -285,11 +286,11 @@ export function DashboardPage() {
             Guide de démarrage
           </Link>
           <Link
-            href="/campaigns/new"
+            href="/dashboard/selections"
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-orange-500 to-orange-600 px-5 py-2.5 text-[13px] font-semibold text-white shadow-lg shadow-orange-500/30 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/35"
           >
-            <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-            Nouvelle campagne
+            <BookmarkCheck className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+            Ma sélection
           </Link>
         </div>
       </motion.header>
@@ -345,8 +346,8 @@ export function DashboardPage() {
         <div className="flex flex-col overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/40 px-5 py-4">
             <div>
-              <h2 className="text-sm font-bold text-stone-900">Campagnes actives</h2>
-              <p className="mt-0.5 text-[11px] text-stone-500">Volume d&apos;envois sur la période</p>
+              <h2 className="text-sm font-bold text-stone-900">Volume d&apos;envois</h2>
+              <p className="mt-0.5 text-[11px] text-stone-500">Candidatures sur la période</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex rounded-lg bg-stone-200/60 p-0.5 ring-1 ring-stone-200/80">
@@ -390,11 +391,11 @@ export function DashboardPage() {
 
           <div className="border-t border-stone-100 bg-stone-50/30 px-5 py-4">
             <Link
-              href="/campaigns/new"
+              href="/dashboard/selections"
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-orange-500 to-orange-600 py-3.5 text-sm font-semibold text-white shadow-md shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700"
             >
-              <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-              Créer ma première campagne
+              <BookmarkCheck className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              Ouvrir Ma sélection
             </Link>
           </div>
         </div>
