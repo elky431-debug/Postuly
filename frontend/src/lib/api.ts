@@ -17,7 +17,8 @@ function isNextOnlyApiPath(path: string): boolean {
     path.startsWith("/api/oauth/") ||
     path.startsWith("/api/emails/") ||
     path.startsWith("/api/entreprises/") ||
-    path.startsWith("/api/applications/update-status")
+    path.startsWith("/api/applications/update-status") ||
+    path.startsWith("/api/cv/upload")
   );
 }
 

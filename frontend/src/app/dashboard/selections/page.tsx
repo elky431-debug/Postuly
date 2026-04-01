@@ -204,6 +204,12 @@ export default function SelectionsPage() {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(() => new Set());
   const [launching, setLaunching] = useState(false);
+  /** Indique où en est le flux pour éviter l’impression que « rien ne se passe ». */
+  const [launchPhase, setLaunchPhase] = useState<"letters" | "n8n">("letters");
+  const [showLaunchConfig, setShowLaunchConfig] = useState(false);
+  const [contractType, setContractType] = useState<"stage" | "alternance" | "cdi" | "cdd">("cdi");
+  const [contractStartDate, setContractStartDate] = useState("");
+  const [contractEndDate, setContractEndDate] = useState("");
   /** Retour utilisateur après lancement (remplace window.alert). */
   const [launchFeedback, setLaunchFeedback] = useState<
     | null
@@ -281,6 +287,23 @@ export default function SelectionsPage() {
 
   async function launchCampaign() {
     if (selectedKeys.size === 0) return;
+    const needsDates = contractType !== "cdi";
+    if (needsDates && (!contractStartDate || !contractEndDate)) {
+      setLaunchFeedback({
+        variant: "info",
+        title: "Dates requises",
+        message: "Pour ce contrat, renseigne une date de début et une date de fin.",
+      });
+      return;
+    }
+    if (needsDates && contractStartDate > contractEndDate) {
+      setLaunchFeedback({
+        variant: "info",
+        title: "Dates invalides",
+        message: "La date de début doit être antérieure ou égale à la date de fin.",
+      });
+      return;
+    }
     const destinations = buildDestinations(selection, emailStates, selectedKeys);
     if (destinations.length === 0) {
       setLaunchFeedback({
@@ -292,6 +315,7 @@ export default function SelectionsPage() {
       return;
     }
 
+    setLaunchPhase("letters");
     setLaunching(true);
     try {
       const supabase = createClient();
@@ -312,9 +336,16 @@ export default function SelectionsPage() {
       }>("/api/n8n/campaign-from-selection", {
         method: "POST",
         token,
-        body: { destinations },
+        body: {
+          destinations,
+          contract_type: contractType,
+          // Ultra safe: champs optionnels côté API Next/FastAPI (ignorés si non supportés backend).
+          contract_start_date: needsDates ? contractStartDate : undefined,
+          contract_end_date: needsDates ? contractEndDate : undefined,
+        },
       });
 
+      setLaunchPhase("n8n");
       const n8n = await api<{ success?: boolean; nb_emails?: number; message?: string }>(
         "/api/n8n/launch-campaign",
         {
@@ -332,6 +363,7 @@ export default function SelectionsPage() {
           `${created.applications_created} candidature(s) créée(s). Les e-mails sont confiés à n8n.`,
       });
       setSelectedKeys(new Set());
+      setShowLaunchConfig(false);
     } catch (err) {
       setLaunchFeedback({
         variant: "error",
@@ -586,9 +618,119 @@ export default function SelectionsPage() {
 
         <SelectionLaunchBar
           totalSelected={totalSelected}
-          onLaunch={() => void launchCampaign()}
-          launching={launching}
+          onContinue={() => setShowLaunchConfig(true)}
         />
+
+        {showLaunchConfig && (
+          <div
+            className="fixed inset-0 z-[95] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => {
+              if (!launching) setShowLaunchConfig(false);
+            }}
+          >
+            <div
+              className="w-full max-w-lg overflow-hidden rounded-3xl border border-stone-200/80 bg-white shadow-[0_20px_60px_-20px_rgba(15,23,42,0.35)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="h-1 w-full bg-gradient-to-r from-[#FE6A2E] via-[#FF9F4A] to-[#FFB347]" />
+              <div className="bg-gradient-to-b from-[#FFFBF7] to-white px-6 pb-6 pt-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold tracking-tight text-neutral-900">
+                      Configurer la campagne
+                    </h3>
+                    <p className="mt-1 text-sm text-neutral-500">
+                      Choisis le type de contrat avant le lancement.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-semibold text-orange-700 ring-1 ring-orange-200/70">
+                    {selectedKeys.size} destinataire{selectedKeys.size > 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <label className="block sm:col-span-2">
+                    <span className="text-sm font-medium text-neutral-700">Type de contrat</span>
+                    <div className="relative mt-1.5">
+                      <select
+                        value={contractType}
+                        onChange={(e) =>
+                          setContractType(e.target.value as "stage" | "alternance" | "cdi" | "cdd")
+                        }
+                        className="w-full appearance-none rounded-xl border border-neutral-200 bg-white px-3 py-2.5 pr-9 text-sm font-medium text-neutral-900 transition-shadow focus:border-orange-200 focus:outline-none focus:ring-2 focus:ring-[#FE6A2E]/20"
+                      >
+                        <option value="cdi">CDI</option>
+                        <option value="cdd">CDD</option>
+                        <option value="alternance">Alternance</option>
+                        <option value="stage">Stage</option>
+                      </select>
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-neutral-400">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-xs text-neutral-500">
+                      {contractType === "cdi"
+                        ? "CDI : aucune période obligatoire."
+                        : "Période requise pour personnaliser les lettres."}
+                    </p>
+                  </label>
+
+                  {contractType !== "cdi" && (
+                    <>
+                      <label className="block">
+                        <span className="text-sm font-medium text-neutral-700">Date de début</span>
+                        <input
+                          type="date"
+                          value={contractStartDate}
+                          onChange={(e) => setContractStartDate(e.target.value)}
+                          className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 transition-shadow focus:border-orange-200 focus:outline-none focus:ring-2 focus:ring-[#FE6A2E]/20"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-sm font-medium text-neutral-700">Date de fin</span>
+                        <input
+                          type="date"
+                          value={contractEndDate}
+                          onChange={(e) => setContractEndDate(e.target.value)}
+                          className="mt-1.5 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 transition-shadow focus:border-orange-200 focus:outline-none focus:ring-2 focus:ring-[#FE6A2E]/20"
+                        />
+                      </label>
+                    </>
+                  )}
+                </div>
+
+                <div className="mt-6 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!launching) setShowLaunchConfig(false);
+                    }}
+                    disabled={launching}
+                    className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void launchCampaign()}
+                    disabled={launching}
+                    className="rounded-xl bg-gradient-to-r from-[#FE6A2E] to-[#FFB347] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-orange-500/20 transition hover:brightness-[1.03] disabled:opacity-40"
+                  >
+                    {launching
+                      ? launchPhase === "n8n"
+                        ? "Envoi à n8n…"
+                        : "Génération des lettres…"
+                      : "Lancer la campagne"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {launchFeedback && (
           <div

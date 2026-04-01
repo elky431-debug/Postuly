@@ -268,6 +268,8 @@ class CampaignFromSelectionBody(BaseModel):
     job_title: Optional[str] = Field(None, max_length=200)
     location: Optional[str] = Field(None, max_length=200)
     contract_type: Optional[str] = Field(None, pattern="^(stage|alternance|cdi|cdd)$")
+    contract_start_date: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    contract_end_date: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
 
 
 class CampaignFromSelectionResponse(BaseModel):

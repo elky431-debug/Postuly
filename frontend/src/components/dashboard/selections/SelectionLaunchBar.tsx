@@ -5,12 +5,10 @@
  */
 export function SelectionLaunchBar({
   totalSelected,
-  onLaunch,
-  launching,
+  onContinue,
 }: {
   totalSelected: number;
-  onLaunch: () => void;
-  launching: boolean;
+  onContinue: () => void;
 }) {
   if (totalSelected === 0) return null;
 
@@ -34,11 +32,10 @@ export function SelectionLaunchBar({
         </div>
         <button
           type="button"
-          onClick={onLaunch}
-          disabled={launching}
+          onClick={onContinue}
           className="shrink-0 rounded-lg bg-stone-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-400"
         >
-          {launching ? "Envoi…" : "Lancer la campagne"}
+          Continuer
         </button>
       </div>
     </div>

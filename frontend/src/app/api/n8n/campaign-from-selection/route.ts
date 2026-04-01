@@ -38,6 +38,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  /* Génération des lettres IA : peut être longue ; sans plafond le client reste bloqué sans message. */
+  const backendTimeoutMs = 180_000;
   let res: Response;
   try {
     res = await fetch(url, {
@@ -47,8 +49,18 @@ export async function POST(req: NextRequest) {
         ...(token ? { Authorization: token } : {}),
       },
       body,
+      signal: AbortSignal.timeout(backendTimeoutMs),
     });
   } catch (e) {
+    const name = e instanceof Error ? e.name : "";
+    if (name === "TimeoutError" || name === "AbortError") {
+      return NextResponse.json(
+        {
+          detail: `FastAPI n'a pas répondu sous ${backendTimeoutMs / 1000}s (génération des lettres). Vérifie le backend et les clés API (IA).`,
+        },
+        { status: 504 }
+      );
+    }
     const msg =
       e instanceof Error ? e.message : String(e);
     return NextResponse.json(

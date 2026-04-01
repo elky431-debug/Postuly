@@ -21,6 +21,7 @@ from app.api.companies import router as companies_router
 from app.api.applications import router as applications_router
 from app.api.cv import router as cv_router
 from app.api.diagnostic import router as diagnostic_router
+from app.api.emails import router as emails_router
 
 settings = get_settings()
 
@@ -98,6 +99,7 @@ app.include_router(companies_router, prefix="/api/companies", tags=["Companies"]
 app.include_router(applications_router, prefix="/api/applications", tags=["Applications"])
 app.include_router(cv_router, prefix="/api/cv", tags=["CV"])
 app.include_router(diagnostic_router, prefix="/api/diagnostic", tags=["Diagnostic"])
+app.include_router(emails_router, prefix="/api/emails", tags=["Emails"])
 
 
 @app.get("/api/health")

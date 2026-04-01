@@ -1,6 +1,29 @@
 """Service de génération de lettres de motivation par IA."""
 
+import re
+from typing import Optional
+
 from app.config import get_settings
+
+
+def normalize_cover_letter_spacing(text: str) -> str:
+    """
+    Renforce les sauts de ligne si le modèle les a omis (évite un bloc sans structure).
+    """
+    t = text.strip()
+    if not t:
+        return t
+    if "\n\n" in t:
+        return t
+    t = re.sub(r"(?i)(Monsieur,\s*Madame,)\s+", r"\1\n\n", t, count=1)
+    t = re.sub(
+        r"(?<!\n)\s+(Cordialement|Bien cordialement|Bien à vous)\b",
+        r"\n\n\1",
+        t,
+        count=1,
+        flags=re.IGNORECASE,
+    )
+    return t
 
 
 async def generate_cover_letter(
@@ -8,6 +31,8 @@ async def generate_cover_letter(
     company: dict,
     job_title: str,
     contract_type: str,
+    contract_start_date: Optional[str] = None,
+    contract_end_date: Optional[str] = None,
 ) -> dict:
     """
     Génère une lettre de motivation personnalisée.
@@ -15,7 +40,14 @@ async def generate_cover_letter(
     """
     settings = get_settings()
 
-    prompt = _build_prompt(user_profile, company, job_title, contract_type)
+    prompt = _build_prompt(
+        user_profile,
+        company,
+        job_title,
+        contract_type,
+        contract_start_date=contract_start_date,
+        contract_end_date=contract_end_date,
+    )
 
     if settings.anthropic_api_key:
         return await _generate_with_anthropic(prompt, settings.anthropic_api_key)
@@ -30,6 +62,8 @@ def _build_prompt(
     company: dict,
     job_title: str,
     contract_type: str,
+    contract_start_date: Optional[str] = None,
+    contract_end_date: Optional[str] = None,
 ) -> str:
     """Construit le prompt de génération selon la charte produit."""
     cv_parsed = user_profile.get("cv_parsed", {})
@@ -56,6 +90,26 @@ def _build_prompt(
     company_sector = company.get("naf_label") or company.get("naf_code") or "non spécifié"
     city = company.get("city") or "non spécifiée"
 
+    periode = "non précisée"
+    if contract_start_date and contract_end_date:
+        periode = f"du {contract_start_date} au {contract_end_date}"
+    elif contract_start_date:
+        periode = f"à partir du {contract_start_date}"
+    elif contract_end_date:
+        periode = f"jusqu'au {contract_end_date}"
+
+    contrat_dates = ""
+    if contract_type.strip().upper() == "CDI":
+        contrat_dates = (
+            "- Pour un CDI : ne mentionne pas de dates de début/fin ni de durée inventée ; "
+            "indique clairement qu’il s’agit d’un CDI."
+        )
+    else:
+        contrat_dates = (
+            f"- Le type de contrat « {contract_type} » et la période « {periode} » doivent apparaître "
+            "clairement dans le corps de la lettre (formulation naturelle, pas une liste)."
+        )
+
     return f"""Tu es un expert en recrutement français. Tu rédiges des lettres de motivation percutantes, naturelles et personnalisées.
 
 ## Profil du candidat
@@ -73,6 +127,7 @@ def _build_prompt(
 - Secteur : {company_sector}
 - Poste visé : {job_title}
 - Type de contrat : {contract_type}
+- Période souhaitée : {periode}
 - Ville : {city}
 
 ## Ton attendu selon le contrat
@@ -81,14 +136,21 @@ def _build_prompt(
 - CDI : professionnel et confiant, focus sur la valeur ajoutée immédiate et la projection long terme
 - CDD : réactif et opérationnel, disponibilité et adaptabilité mises en avant
 
-## Instructions
+## Format obligatoire (texte brut, pour un rendu e-mail lisible)
+- Première ligne exactement : Monsieur, Madame,
+- Puis une ligne vide, puis le corps en exactement 3 paragraphes distincts.
+- Entre chaque paragraphe du corps : une ligne vide (double saut de ligne \\n\\n).
+- Après le 3e paragraphe : une ligne vide, puis la formule de politesse (ex. Cordialement,) puis ton prénom et nom sur la ligne suivante si pertinent.
+{contrat_dates}
+- NE PAS utiliser de HTML, de markdown ni de numérotation de paragraphes.
+
+## Instructions de fond
 - Adopte le ton correspondant au type de contrat ci-dessus
-- Structure : accroche (1 phrase marquante) → pourquoi cette entreprise → ce que le candidat apporte → conclusion + appel à action
-- Longueur : 3 paragraphes, max 250 mots
+- Structure du contenu : accroche → pourquoi cette entreprise → ce que le candidat apporte → conclusion
+- Longueur : max 250 mots
 - Langue : français, vouvoiement
 - NE PAS inventer de détails absents du profil
 - NE PAS utiliser de formules bateau ("Je me permets de vous adresser ma candidature...")
-- Terminer par une formule de politesse sobre
 - Retourner UNIQUEMENT la lettre, sans commentaire ni balise
 
 Rédige maintenant la lettre de motivation."""
@@ -128,7 +190,8 @@ async def _generate_with_openai(prompt: str, api_key: str) -> dict:
         temperature=0.7,
     )
 
-    text = response.choices[0].message.content
+    raw = response.choices[0].message.content or ""
+    text = normalize_cover_letter_spacing(raw)
     tokens = response.usage.total_tokens if response.usage else None
 
     return {"cover_letter": text, "tokens_used": tokens}

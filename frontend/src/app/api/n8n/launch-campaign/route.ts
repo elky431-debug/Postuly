@@ -9,15 +9,104 @@ type CandidatureRow = {
   contact: { email: string } | { email: string }[] | null;
 };
 
+type MappedCandidature = {
+  application_id: string;
+  email_destinataire: string;
+  objet: string;
+  lettre_html: string;
+  user_id: string;
+};
+
 function premier<T extends object>(x: T | T[] | null | undefined): T | null {
   if (x == null) return null;
   return Array.isArray(x) ? (x[0] ?? null) : x;
 }
 
+/** n8n cloud ne peut pas joindre localhost pour rappeler /api/emails/send. */
+function nextjsHostnameIsLocal(urlStr: string): boolean {
+  try {
+    const u = new URL(urlStr);
+    const h = u.hostname.toLowerCase();
+    return h === "localhost" || h === "127.0.0.1" || h === "::1";
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Envoie le lot de candidatures approuvées au workflow n8n (envoi Gmail espacé).
- * Chemin dédié : évite le conflit avec FastAPI `GET/PATCH/DELETE /api/campaigns/{campaign_id}`
- * quand NEXT_PUBLIC_BACKEND_URL pointe vers le backend (ex. POST /api/campaigns/launch → 405).
+ * - LAUNCH_CAMPAIGN_DIRECT=true  → envoi direct Next (ignore n8n)
+ * - LAUNCH_CAMPAIGN_DIRECT=false → n8n obligatoire (webhook + NEXTJS_URL joignable par n8n)
+ * - auto :
+ *   - pas de N8N_WEBHOOK_URL → envoi direct
+ *   - NEXTJS_URL en localhost → envoi direct (n8n cloud ne peut pas rappeler le PC ; les mails partent quand même)
+ *   - sinon → webhook n8n
+ */
+function useDirectEmailDispatch(): boolean {
+  const explicit = process.env.LAUNCH_CAMPAIGN_DIRECT?.trim().toLowerCase();
+  if (explicit === "true" || explicit === "1") return true;
+  if (explicit === "false" || explicit === "0") return false;
+
+  const n8nUrl = process.env.N8N_WEBHOOK_URL?.trim() ?? "";
+  const nextjsUrl = process.env.NEXTJS_URL?.trim() ?? "";
+  if (!n8nUrl) return true;
+  if (nextjsHostnameIsLocal(nextjsUrl)) return true;
+  return false;
+}
+
+const PAUSE_ENTRE_MAILS_MS = 2000;
+
+async function envoyerDepuisNextDirect(
+  baseUrl: string,
+  internalKey: string,
+  candidatures: MappedCandidature[]
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const origin = baseUrl.replace(/\/$/, "");
+  const erreurs: string[] = [];
+
+  for (let i = 0; i < candidatures.length; i++) {
+    const c = candidatures[i];
+    try {
+      const res = await fetch(`${origin}/api/emails/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-internal-key": internalKey,
+        },
+        body: JSON.stringify({
+          to: c.email_destinataire,
+          subject: c.objet,
+          body: c.lettre_html,
+          userId: c.user_id,
+          applicationId: c.application_id,
+        }),
+        signal: AbortSignal.timeout(120_000),
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        erreurs.push(`${c.email_destinataire}: ${t.slice(0, 240)}`);
+      }
+    } catch (e) {
+      erreurs.push(
+        `${c.email_destinataire}: ${e instanceof Error ? e.message : String(e)}`
+      );
+    }
+    if (i < candidatures.length - 1) {
+      await new Promise((r) => setTimeout(r, PAUSE_ENTRE_MAILS_MS));
+    }
+  }
+
+  if (erreurs.length > 0) {
+    return {
+      ok: false,
+      message: erreurs.join(" | "),
+    };
+  }
+  return { ok: true };
+}
+
+/**
+ * Envoie le lot de candidatures approuvées au workflow n8n (envoi Gmail espacé),
+ * ou en envoi direct si localhost / pas de webhook (n8n cloud ne peut pas rappeler le PC).
  */
 export async function POST(req: NextRequest) {
   try {
@@ -118,37 +207,79 @@ async function postLaunchCampaign(req: NextRequest) {
   const internalKey = process.env.INTERNAL_API_KEY?.trim() ?? "";
   const n8nUrl = process.env.N8N_WEBHOOK_URL?.trim() ?? "";
 
-  if (!nextjsUrl || !internalKey || !n8nUrl) {
+  if (!nextjsUrl || !internalKey) {
     return NextResponse.json(
-      { error: "NEXTJS_URL, INTERNAL_API_KEY ou N8N_WEBHOOK_URL manquant dans .env.local" },
+      {
+        error:
+          "NEXTJS_URL ou INTERNAL_API_KEY manquant dans .env.local (requis pour lancer l’envoi).",
+      },
       { status: 503 }
     );
   }
 
-  const payload = {
-    nextjs_url: nextjsUrl.replace(/\/$/, ""),
-    internal_key: internalKey,
-    user_id: user.id,
-    candidatures: mapped,
-  };
+  const direct = useDirectEmailDispatch();
 
-  const n8nRes = await fetch(n8nUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!n8nRes.ok) {
-    const t = await n8nRes.text();
+  if (!direct && !n8nUrl) {
     return NextResponse.json(
-      { error: "Erreur n8n", detail: t.slice(0, 300) },
-      { status: 502 }
+      {
+        error:
+          "N8N_WEBHOOK_URL manquant alors que LAUNCH_CAMPAIGN_DIRECT=false. Ajoute l’URL du webhook ou enlève LAUNCH_CAMPAIGN_DIRECT.",
+      },
+      { status: 503 }
     );
   }
 
-  /* Le Kanban ne liste que sent / followed_up / rejected : sans passage à « sent »,
-   * les fiches restaient en « approved » (invisibles). On enregistre l’envoi dès que
-   * n8n accepte le lot ; le webhook update-status peut toujours raffiner ensuite. */
+  if (direct) {
+    const envoi = await envoyerDepuisNextDirect(nextjsUrl, internalKey, mapped);
+    if (!envoi.ok) {
+      return NextResponse.json(
+        {
+          error: "Échec envoi Gmail",
+          detail: envoi.message,
+        },
+        { status: 502 }
+      );
+    }
+  } else {
+    const payload = {
+      nextjs_url: nextjsUrl.replace(/\/$/, ""),
+      internal_key: internalKey,
+      user_id: user.id,
+      candidatures: mapped,
+    };
+
+    const n8nTimeoutMs = 120_000;
+    let n8nRes: Response;
+    try {
+      n8nRes = await fetch(n8nUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(n8nTimeoutMs),
+      });
+    } catch (e) {
+      const name = e instanceof Error ? e.name : "";
+      if (name === "TimeoutError" || name === "AbortError") {
+        return NextResponse.json(
+          {
+            error: "Timeout n8n",
+            detail: `Le webhook n8n n'a pas répondu sous ${n8nTimeoutMs / 1000}s. Vérifie N8N_WEBHOOK_URL, que n8n tourne, et le tunnel (ngrok) si besoin.`,
+          },
+          { status: 504 }
+        );
+      }
+      throw e;
+    }
+
+    if (!n8nRes.ok) {
+      const t = await n8nRes.text();
+      return NextResponse.json(
+        { error: "Erreur n8n", detail: t.slice(0, 300) },
+        { status: 502 }
+      );
+    }
+  }
+
   const sentAt = new Date().toISOString();
   const applicationIds = mapped.map((m) => m.application_id);
   const { error: sentErr } = await client
@@ -176,10 +307,19 @@ async function postLaunchCampaign(req: NextRequest) {
     );
   }
 
+  const nb = mapped.length;
+  const n8nConfigured = Boolean(process.env.N8N_WEBHOOK_URL?.trim());
+  const skippedN8nForLocal =
+    direct && n8nConfigured && nextjsHostnameIsLocal(nextjsUrl);
+  const message = direct
+    ? skippedN8nForLocal
+      ? `${nb} e-mail(s) envoyé(s). En local, n8n n’est pas appelé (NEXTJS_URL non public). Mets NEXTJS_URL sur ton URL tunnel pour déléguer à n8n.`
+      : `${nb} e-mail(s) envoyé(s) depuis Postuly (sans webhook n8n).`
+    : `${nb} e-mail(s) confié(s) à n8n (cadence définie dans le workflow).`;
+
   return NextResponse.json({
     success: true,
-    nb_emails: mapped.length,
-    message: `${mapped.length} e-mail(s) confié(s) à n8n (cadence définie dans le workflow).`,
+    nb_emails: nb,
+    message,
   });
 }
-

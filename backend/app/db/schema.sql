@@ -237,3 +237,5 @@ CREATE INDEX IF NOT EXISTS idx_companies_city ON companies(city);
 CREATE INDEX IF NOT EXISTS idx_email_contacts_company_id ON email_contacts(company_id);
 CREATE INDEX IF NOT EXISTS idx_email_logs_application_id ON email_logs(application_id);
 CREATE INDEX IF NOT EXISTS idx_gmail_tokens_user_id ON gmail_tokens(user_id);
+
+-- Storage CV : exécuter aussi backend/app/db/storage_cvs.sql (bucket « cvs »), sinon cv_url reste NULL.

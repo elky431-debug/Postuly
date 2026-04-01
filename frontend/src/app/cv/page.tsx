@@ -239,7 +239,9 @@ export default function CvPage() {
     fileName?: string
   ) {
     if (fileName) setLastFileName(fileName);
-    setUploadOk("CV analysé et enregistré.");
+    setUploadOk(
+      "CV enregistré sur Supabase et analysé — ce fichier sera joint automatiquement à tes e-mails de candidature."
+    );
     clearCoachCache();
     coachCacheHydratedRef.current = false;
     setCoachResult(null);
@@ -303,11 +305,11 @@ export default function CvPage() {
         suggestions: string[];
       }>("/api/cv/upload", fd, t);
       applyUploadResult(r, uid, file.name);
-      await loadProfile();
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Échec de l’envoi du fichier.");
     } finally {
       setUploading(false);
+      await loadProfile();
     }
   }
 

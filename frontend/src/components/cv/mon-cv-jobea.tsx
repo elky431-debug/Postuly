@@ -460,8 +460,31 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
       hasParsed &&
       (flowStep === "verify" || flowStep === "before_coach"));
 
+  const manqueFichierCv = hasParsed && !profile?.cv_url?.trim();
+
   return (
     <div className="max-w-3xl mx-auto space-y-8 pb-20" style={{ fontFamily: "var(--font-geist-sans)" }}>
+      {manqueFichierCv && (
+        <div
+          className="rounded-xl border px-4 py-3 text-sm"
+          style={{
+            borderColor: "rgba(254, 106, 46, 0.35)",
+            background: "rgba(254, 106, 46, 0.08)",
+            color: "#3f2e28",
+          }}
+          role="status"
+        >
+          <p className="font-semibold text-gray-900">Pièce jointe e-mail : fichier CV manquant</p>
+          <p className="mt-1.5 leading-relaxed text-gray-700">
+            Le texte de ton CV est enregistré, mais le fichier n’est pas sur Storage (colonne{" "}
+            <code className="text-xs">cv_url</code> vide). À l’import, Next enregistre d’abord le PDF/DOCX
+            dans le bucket Supabase « cvs » puis met à jour cette URL — réimporte ton fichier ci-dessous,
+            vérifie <code className="text-xs">SUPABASE_SERVICE_ROLE_KEY</code> dans{" "}
+            <code className="text-xs">.env.local</code> et exécute{" "}
+            <code className="text-xs">backend/app/db/storage_cvs.sql</code> dans Supabase si besoin.
+          </p>
+        </div>
+      )}
       {showTopBreadcrumb && (
         <p className="text-xs text-gray-500 tracking-wide">
           <Link
@@ -957,6 +980,11 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                 <p className="text-sm text-gray-500 mt-2">
                   Formats acceptés : PDF, DOCX (max 10 Mo)
                 </p>
+                <p className="text-xs text-gray-500 mt-3 max-w-md leading-relaxed">
+                  Dès l’envoi, le fichier est enregistré sur ton espace Supabase et l’URL est sauvegardée sur ton
+                  profil : il sera utilisé comme <span className="font-medium text-gray-700">pièce jointe</span>{" "}
+                  lors des envois Gmail depuis Postuly.
+                </p>
                 <span
                   className="mt-8 inline-flex items-center justify-center px-8 py-3 rounded-xl text-sm font-semibold text-white shadow-md hover:opacity-95 transition-opacity"
                   style={{ background: CTA_GRAD }}
@@ -972,8 +1000,10 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                 className="w-10 h-10 rounded-full border-[3px] border-orange-200 border-t-[#FE6A2E] animate-spin mb-4"
                 aria-hidden
               />
-              <p className="text-sm font-medium text-gray-700">Analyse du fichier en cours…</p>
-              <p className="text-xs text-gray-500 mt-1">Extraction IA des informations</p>
+              <p className="text-sm font-medium text-gray-700">Enregistrement et analyse en cours…</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Fichier envoyé sur Supabase, puis extraction des informations
+              </p>
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -986,7 +1016,11 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                   <p className="text-sm font-semibold text-gray-900 truncate">
                     {fileLabel || "CV enregistré"}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">Fichier prêt — vérifie les données ci-dessous</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {profile?.cv_url?.trim()
+                      ? "Fichier stocké — sera joint aux mails de candidature. Vérifie les données ci-dessous."
+                      : "Fichier prêt — vérifie les données ci-dessous (si l’URL du fichier manque, réimporte le PDF)."}
+                  </p>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">

@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     google_client_id: str = ""
     google_client_secret: str = ""
 
+    # Aligné sur frontend — tokens gmail_tokens chiffrés (AES-256-GCM)
+    encryption_key: str = ""
+
     # Redis / Celery
     redis_url: str = "redis://localhost:6379/0"
 

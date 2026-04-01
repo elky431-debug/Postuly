@@ -77,6 +77,8 @@ async def create_campaign_from_selection(
         body.destinations[0].ville if body.destinations else "France"
     )
     contract_type = body.contract_type or "cdi"
+    contract_start_date = body.contract_start_date
+    contract_end_date = body.contract_end_date
 
     camp_ins = (
         supabase.table("campaigns")
@@ -176,6 +178,8 @@ async def create_campaign_from_selection(
                 company=company_for_prompt,
                 job_title=job_title,
                 contract_type=contract_type,
+                contract_start_date=contract_start_date,
+                contract_end_date=contract_end_date,
             )
             cover_letter = gen.get("cover_letter") or ""
         except Exception as e:
