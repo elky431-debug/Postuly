@@ -82,7 +82,16 @@ const NAF_MAP: Record<string, string[]> = {
   "formation":          ["85.59A", "85.59B", "78.10Z"],
 
   // ── Restauration & hôtellerie
-  "restauration":       ["56.10A", "56.10B", "56.21Z"],
+  "restauration rapide":["56.10C"],
+  "fast food":          ["56.10C"],
+  "fastfood":           ["56.10C"],
+  "kebab":              ["56.10C"],
+  "snack":              ["56.10C"],
+  "sandwicherie":       ["56.10C"],
+  "restauration":       ["56.10A", "56.10B", "56.10C", "56.21Z"],
+  "restaurant":         ["56.10A", "56.10B"],
+  "restaurant traditionnel": ["56.10A"],
+  "gastronomie":        ["56.10A", "56.21Z"],
   "cuisine":            ["56.10A", "56.10B", "56.29A"],
   "cuisinier":          ["56.10A", "56.10B", "56.29A"],
   "chef":               ["56.10A", "56.21Z", "56.29A"],
@@ -474,7 +483,7 @@ const PAGE_SIZE = 25;
 const nafLlmCache = new Map<string, { codes: string[] | null; ts: number }>();
 const NAF_CACHE_TTL = 1000 * 60 * 60 * 24; // 24h
 
-/** Résout un terme libre → codes NAF via Claude Haiku. Retourne null si échec. */
+/** Résout un terme libre → codes NAF via Claude Sonnet. Retourne null si échec. */
 async function getNafCodesFromLLM(secteur: string): Promise<string[] | null> {
   const key = secteur.toLowerCase().trim();
 
@@ -494,16 +503,26 @@ async function getNafCodesFromLLM(secteur: string): Promise<string[] | null> {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 80,
+        model: "claude-sonnet-4-6",
+        max_tokens: 200,
         messages: [
           {
             role: "user",
-            content: `Nomenclature NAF 2008 française. Pour le terme "${secteur}", donne les codes NAF les plus pertinents (3 à 6 max). Réponds UNIQUEMENT avec un JSON array valide, rien d'autre. Exemple: ["73.11Z","73.12Z","70.22Z"]`,
+            content: `Tu es expert en nomenclature NAF 2008 (INSEE France). Pour le terme de recherche "${secteur}", retourne UNIQUEMENT les codes NAF qui correspondent EXACTEMENT à cette activité spécifique.
+
+Règles IMPORTANTES :
+- Sois très précis et littéral. "restauration rapide" → ["56.10C"] seulement (PAS 56.10A qui est la restauration traditionnelle/gastronomique).
+- "sport" → codes clubs sportifs/salles de sport, PAS transport
+- Ne mets que les codes qui correspondent vraiment à ce terme précis
+- Maximum 5 codes, seulement les plus pertinents
+- Les codes doivent exister dans la nomenclature NAF 2008 officielle
+- Format exact : XX.XXX (ex: 56.10C, 73.11Z)
+
+Réponds UNIQUEMENT avec un tableau JSON, sans aucun texte avant ou après. Exemple: ["56.10C"]`,
           },
         ],
       }),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!res.ok) return null; // pas de cache sur erreur API

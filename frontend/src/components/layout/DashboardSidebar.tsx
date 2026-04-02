@@ -18,7 +18,7 @@ import type { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { useSelectionStore } from "@/store/selectionStore";
-import { PostulyWordmark } from "@/components/brand/PostulyLogo";
+import { PostulyMarkIcon } from "@/components/brand/PostulyLogo";
 
 function userDisplayName(user: User): string {
   const meta = user.user_metadata as { full_name?: string } | undefined;
@@ -38,43 +38,28 @@ function userInitials(user: User): string {
   return em.slice(0, 2).toUpperCase();
 }
 
-type DashboardSidebarProps = {
-  user: User;
-};
+type DashboardSidebarProps = { user: User };
 
-/**
- * Sidebar dashboard — fond blanc, onglet actif en bloc orange arrondi (texte/icônes blancs).
- */
+const MAIN_NAV = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Kanban", href: "/kanban", icon: Columns3 },
+  { name: "Entreprises", href: "/dashboard/entreprises", icon: Building2 },
+  { name: "Sélections", href: "/dashboard/selections", icon: BookmarkCheck },
+  { name: "Mon CV", href: "/cv", icon: FileText },
+] as const;
+
+const ACCOUNT_NAV = [
+  { name: "Profil", href: "/dashboard/profil", icon: UserRound },
+  { name: "Paramètres", href: "/dashboard/parametres", icon: Settings },
+  { name: "Abonnement", href: "/dashboard/abonnement", icon: CreditCard },
+] as const;
+
 export function DashboardSidebar({ user }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const selectionCount = useSelectionStore((s) => s.selection.length);
-
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, badge: null as number | null, disabled: false },
-    { name: "Candidatures", href: "/kanban", icon: Columns3, badge: null, disabled: false },
-    {
-      name: "Recherche entreprise",
-      href: "/dashboard/entreprises",
-      icon: Building2,
-      badge: null,
-      disabled: false,
-    },
-    {
-      name: "Campagne",
-      href: "/dashboard/selections",
-      icon: BookmarkCheck,
-      badge: selectionCount > 0 ? selectionCount : null,
-      disabled: false,
-    },
-    { name: "Relance", href: "/relance", icon: RefreshCw, badge: null, disabled: false },
-    { name: "Mon CV", href: "/cv", icon: FileText, badge: null, disabled: false },
-    { name: "Profil", href: "/dashboard/profil", icon: UserRound, badge: null, disabled: false },
-    { name: "Paramètres", href: "/dashboard/parametres", icon: Settings, badge: null, disabled: false },
-    { name: "Abonnement", href: "/dashboard/abonnement", icon: CreditCard, badge: null, disabled: false },
-  ];
   const email = user.email ?? "";
-  const truncatedEmail = email.length > 28 ? `${email.slice(0, 26)}…` : email;
+  const truncatedEmail = email.length > 26 ? `${email.slice(0, 24)}…` : email;
 
   async function handleLogout() {
     const supabase = createClient();
@@ -83,96 +68,135 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
   }
 
   return (
-    <aside className="flex min-h-screen w-[272px] min-w-[272px] flex-col border-r border-stone-200 bg-white">
-      <div className="shrink-0 border-b border-stone-100 bg-white px-6 pb-5 pt-7">
+    <aside className="flex min-h-screen w-[240px] min-w-[240px] flex-col bg-[#0f0f0f]">
+      {/* ── Logo ─────────────────────────────────────────── */}
+      <div className="border-b border-white/[0.05] px-4 py-[18px]">
         <Link
           href="/dashboard"
-          prefetch
-          className="block min-w-0 transition-opacity hover:opacity-90"
+          className="flex items-center gap-1.5 no-underline transition-opacity hover:opacity-80"
         >
-          <PostulyWordmark size="md" showBeta />
+          <PostulyMarkIcon className="h-[26px] w-[26px]" />
+          <span
+            className="text-[17px] font-bold lowercase tracking-[-0.02em] text-white"
+            style={{ fontFamily: "var(--font-dm-sans)" }}
+          >
+            postuly
+          </span>
+          <span className="ml-0.5 rounded-full bg-orange-500/15 px-2 py-[2px] text-[9px] font-bold uppercase tracking-[0.12em] text-orange-400">
+            Beta
+          </span>
         </Link>
       </div>
 
-      {/* Fond blanc ; onglet actif = pastille orange pleine largeur (type ref. cyan → orange) */}
-      <nav className="flex min-h-0 min-w-0 flex-1 flex-col bg-white px-3 py-4">
-        <div className="flex min-h-0 flex-1 flex-col justify-start gap-1.5">
-          {navigation.map((item) => {
+      {/* ── Navigation ───────────────────────────────────── */}
+      <nav className="flex min-h-0 flex-1 flex-col px-2.5 py-4">
+        {/* Section principale */}
+        <p className="mb-2 px-2 text-[9px] font-bold uppercase tracking-[0.16em] text-white/20">
+          Principal
+        </p>
+        <div className="space-y-px">
+          {MAIN_NAV.map(({ name, href, icon: Icon }) => {
             const isActive =
-              pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
-            const Icon = item.icon;
+              pathname === href ||
+              (href !== "/dashboard" && pathname.startsWith(href));
+            const badge = name === "Sélections" && selectionCount > 0 ? selectionCount : null;
 
             return (
               <Link
-                key={item.name}
-                href={item.disabled ? "#" : item.href}
-                prefetch={!item.disabled}
-                onClick={(e) => {
-                  if (item.disabled) e.preventDefault();
-                }}
+                key={name}
+                href={href}
                 className={cn(
-                  "flex w-full min-w-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13px] no-underline transition-all",
-                  item.disabled && "cursor-not-allowed opacity-40",
-                  !item.disabled &&
-                    !isActive &&
-                    "text-stone-600 hover:bg-stone-100 hover:text-stone-900",
-                  !item.disabled &&
-                    isActive &&
-                    "bg-orange-500 font-semibold text-white shadow-[0_8px_20px_-10px_rgba(249,115,22,0.8)]"
+                  "relative flex items-center gap-2.5 rounded-lg px-3 py-[9px] text-[13px] font-medium transition-all duration-150 no-underline",
+                  isActive
+                    ? "bg-white/[0.08] text-white"
+                    : "text-white/40 hover:bg-white/[0.04] hover:text-white/70"
                 )}
               >
+                {/* Left indicator bar */}
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 h-[18px] w-[3px] -translate-y-1/2 rounded-r-full bg-orange-500" />
+                )}
                 <Icon
                   className={cn(
-                    "h-[18px] w-[18px] shrink-0",
-                    isActive && !item.disabled ? "text-white" : "text-stone-400"
+                    "h-[15px] w-[15px] shrink-0 transition-colors",
+                    isActive ? "text-orange-400" : "text-white/25"
                   )}
                   strokeWidth={2}
-                  aria-hidden
                 />
-                <span className="min-w-0 flex-1 truncate">{item.name}</span>
-                {item.badge !== null && (
+                <span className="flex-1 truncate">{name}</span>
+                {badge !== null && (
                   <span
                     className={cn(
-                      "inline-flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] font-bold leading-none tabular-nums",
-                      isActive ? "bg-white/20 text-white" : "bg-orange-100 text-orange-600"
+                      "flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold tabular-nums",
+                      isActive
+                        ? "bg-orange-500/25 text-orange-300"
+                        : "bg-orange-500 text-white"
                     )}
-                    aria-hidden
                   >
-                    {item.badge}
+                    {badge}
                   </span>
                 )}
               </Link>
             );
           })}
         </div>
+
+        {/* Section compte */}
+        <p className="mb-2 mt-6 px-2 text-[9px] font-bold uppercase tracking-[0.16em] text-white/20">
+          Compte
+        </p>
+        <div className="space-y-px">
+          {ACCOUNT_NAV.map(({ name, href, icon: Icon }) => {
+            const isActive = pathname === href;
+            return (
+              <Link
+                key={name}
+                href={href}
+                className={cn(
+                  "relative flex items-center gap-2.5 rounded-lg px-3 py-[8px] text-[13px] font-medium transition-all duration-150 no-underline",
+                  isActive
+                    ? "bg-white/[0.06] text-white"
+                    : "text-white/30 hover:bg-white/[0.03] hover:text-white/60"
+                )}
+              >
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 h-[16px] w-[3px] -translate-y-1/2 rounded-r-full bg-orange-500" />
+                )}
+                <Icon
+                  className={cn(
+                    "h-[14px] w-[14px] shrink-0",
+                    isActive ? "text-orange-400" : "text-white/20"
+                  )}
+                  strokeWidth={2}
+                />
+                <span className="flex-1 truncate">{name}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
 
-      <div className="shrink-0 border-t border-stone-100 bg-white px-4 py-4">
-        <div className="flex items-center gap-3 rounded-xl border border-stone-200 bg-stone-50/60 px-3 py-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-stone-700 ring-1 ring-stone-200">
+      {/* ── User block ───────────────────────────────────── */}
+      <div className="border-t border-white/[0.05] px-2.5 py-3">
+        <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-[11px] font-bold text-orange-400 ring-1 ring-orange-500/20">
             {userInitials(user)}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold text-stone-900">{userDisplayName(user)}</p>
-            <p className="truncate text-[10px] text-stone-500" title={email}>
+            <p className="truncate text-[12px] font-semibold text-white/75">
+              {userDisplayName(user)}
+            </p>
+            <p className="truncate text-[10px] text-white/30" title={email}>
               {truncatedEmail}
             </p>
           </div>
-          <Link
-            href="/dashboard/parametres"
-            className="shrink-0 rounded-lg p-2 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
-            aria-label="Paramètres"
-          >
-            <Settings className="h-4 w-4" strokeWidth={2} />
-          </Link>
         </div>
         <button
           type="button"
           onClick={handleLogout}
-          className="mt-3 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-stone-500 transition-colors hover:bg-red-50 hover:text-red-600"
+          className="mt-0.5 flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-[12px] font-medium text-white/25 transition-colors hover:bg-red-500/10 hover:text-red-400"
         >
-          <LogOut className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+          <LogOut className="h-3 w-3 shrink-0" strokeWidth={2} />
           Déconnexion
         </button>
       </div>
