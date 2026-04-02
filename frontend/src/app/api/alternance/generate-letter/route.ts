@@ -1,7 +1,7 @@
 /**
  * POST /api/alternance/generate-letter
- * Génère une lettre de motivation courte pour une candidature spontanée en alternance.
- * Utilise Anthropic en priorité, fallback OpenAI, via fetch direct (pas de SDK frontend).
+ * Génère une lettre de motivation pour une candidature spontanée en alternance.
+ * Utilise OpenAI (gpt-4o-mini).
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/supabase/server";
@@ -17,33 +17,57 @@ interface Body {
 }
 
 function buildPrompt(p: {
-  fullName: string;
-  skills: string;
+  firstName:   string;
+  lastName:    string;
+  email:       string;
+  skills:      string;
   experiences: string;
+  formations:  string;
+  languages:   string;
   companyName: string;
-  nafText?: string;
-  address?: string;
-  romeLabel?: string;
+  nafText?:    string;
+  address?:    string;
+  romeLabel?:  string;
 }): string {
-  return `Tu es un expert en recrutement français. Rédige une lettre de motivation courte et professionnelle pour une candidature spontanée en alternance.
+  const sector = p.nafText || p.romeLabel || "non spécifié";
+  const city   = p.address || "non spécifiée";
 
-## Candidat
-- Nom : ${p.fullName}
-- Compétences : ${p.skills || "non spécifiées"}
-- Expériences : ${p.experiences || "non spécifiées"}
+  return `Tu es un expert en recrutement français. Tu rédiges des lettres de motivation percutantes, naturelles et personnalisées.
 
-## Entreprise
-- Nom : ${p.companyName}
-- Secteur : ${p.nafText || p.romeLabel || "non spécifié"}
-- Ville : ${p.address || "non spécifiée"}
+Profil du candidat
+Nom : ${p.firstName} ${p.lastName}
+Email : ${p.email}
+Expériences :
+${p.experiences || "non spécifiées"}
+Formations :
+${p.formations || "non spécifiées"}
+Compétences : ${p.skills || "non spécifiées"}
+Langues : ${p.languages || "non spécifiées"}
 
-## Format obligatoire (texte brut, rendu e-mail)
-- Première ligne exactement : Monsieur, Madame,
-- Ligne vide, puis 3 paragraphes séparés par une ligne vide
-- Après le 3e paragraphe : ligne vide, puis Cordialement,
-- Max 200 mots, vouvoiement, ton dynamique alternance
-- PAS de HTML, markdown, ni numérotation
-- Retourne UNIQUEMENT la lettre, sans commentaire`;
+Candidature
+Entreprise : ${p.companyName}
+Secteur : ${sector}
+Poste visé : alternant(e)
+Type de contrat : alternance
+Ville : ${city}
+
+Ton attendu selon le contrat
+stage : enthousiaste et motivé, style étudiant sérieux, focus sur l'apprentissage
+alternance : dynamique et concret, met en avant le rythme école/entreprise et les compétences en développement
+CDI : professionnel et confiant, focus sur la valeur ajoutée immédiate et la projection long terme
+CDD : réactif et opérationnel, disponibilité et adaptabilité mises en avant
+
+Instructions
+Adopte le ton correspondant au type de contrat ci-dessus
+Structure : accroche (1 phrase marquante) → pourquoi cette entreprise → ce que le candidat apporte → conclusion + appel à action
+Longueur : 3 paragraphes, max 250 mots
+Langue : français, vouvoiement
+NE PAS inventer de détails absents du profil
+NE PAS utiliser de formules bateau ("Je me permets de vous adresser ma candidature...")
+Terminer par une formule de politesse sobre
+Retourner UNIQUEMENT la lettre, sans commentaire ni balise
+
+Rédige maintenant la lettre de motivation.`;
 }
 
 export async function POST(req: NextRequest) {
@@ -67,72 +91,69 @@ export async function POST(req: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  const fullName    = (profile?.full_name ?? "").trim() || "Candidat";
-  const cvParsed    = (profile?.cv_parsed ?? {}) as Record<string, unknown>;
+  const fullName   = (profile?.full_name ?? "").trim() || "Candidat";
+  const nameParts  = fullName.split(/\s+/);
+  const firstName  = nameParts[0] ?? "Candidat";
+  const lastName   = nameParts.slice(1).join(" ") || "";
+  const cvParsed   = (profile?.cv_parsed ?? {}) as Record<string, unknown>;
+
   const skills      = Array.isArray(cvParsed.skills)
-    ? (cvParsed.skills as string[]).slice(0, 8).join(", ")
+    ? (cvParsed.skills as string[]).slice(0, 12).join(", ")
     : "";
   const experiences = Array.isArray(cvParsed.experiences)
-    ? (cvParsed.experiences as string[]).slice(0, 3).join(" / ")
+    ? (cvParsed.experiences as string[]).slice(0, 6).join("\n")
     : "";
+  const formations  = Array.isArray(cvParsed.education)
+    ? (cvParsed.education as string[]).slice(0, 6).join("\n")
+    : "";
+  const languages   = Array.isArray(cvParsed.languages)
+    ? (cvParsed.languages as string[]).slice(0, 8).join(", ")
+    : "";
+  const email       = (cvParsed.email as string | undefined) || user.email || "";
 
-  const prompt = buildPrompt({ fullName, skills, experiences, ...body });
+  const prompt = buildPrompt({ firstName, lastName, email, skills, experiences, formations, languages, ...body });
 
-  const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
-  const openaiKey    = process.env.OPENAI_API_KEY?.trim();
+  const openaiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!openaiKey) {
+    return NextResponse.json(
+      { error: "Clé OPENAI_API_KEY manquante dans les variables d'environnement." },
+      { status: 503 }
+    );
+  }
 
   try {
-    if (anthropicKey) {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key":         anthropicKey,
-          "anthropic-version": "2023-06-01",
-          "Content-Type":      "application/json",
-        },
-        body: JSON.stringify({
-          model:      "claude-haiku-4-5-20251001",
-          max_tokens: 600,
-          messages:   [{ role: "user", content: prompt }],
-        }),
-        signal: AbortSignal.timeout(20_000),
-      });
-      if (!res.ok) throw new Error(`Anthropic ${res.status}`);
-      const data = await res.json() as { content: Array<{ text: string }> };
-      return NextResponse.json({ letter: data.content[0]?.text ?? "" });
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization:  `Bearer ${openaiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model:       "gpt-4o-mini",
+        max_tokens:  700,
+        temperature: 0.7,
+        messages: [
+          {
+            role:    "system",
+            content: "Tu es un expert en rédaction de lettres de motivation en français. Tu retournes uniquement la lettre, sans commentaire.",
+          },
+          { role: "user", content: prompt },
+        ],
+      }),
+      signal: AbortSignal.timeout(25_000),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`OpenAI ${res.status}: ${txt.slice(0, 200)}`);
     }
 
-    if (openaiKey) {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization:  `Bearer ${openaiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model:       "gpt-4o-mini",
-          max_tokens:  600,
-          temperature: 0.7,
-          messages: [
-            { role: "system", content: "Tu es un expert en rédaction de lettres de motivation en français." },
-            { role: "user",   content: prompt },
-          ],
-        }),
-        signal: AbortSignal.timeout(20_000),
-      });
-      if (!res.ok) throw new Error(`OpenAI ${res.status}`);
-      const data = await res.json() as { choices: Array<{ message: { content: string } }> };
-      return NextResponse.json({ letter: data.choices[0]?.message.content ?? "" });
-    }
+    const data = await res.json() as { choices: Array<{ message: { content: string } }> };
+    return NextResponse.json({ letter: data.choices[0]?.message.content ?? "" });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erreur génération IA" },
       { status: 502 }
     );
   }
-
-  return NextResponse.json(
-    { error: "Aucune clé IA configurée (ANTHROPIC_API_KEY ou OPENAI_API_KEY)" },
-    { status: 503 }
-  );
 }
