@@ -674,13 +674,13 @@ export async function GET(req: NextRequest) {
     etat_administratif: "A",
   });
 
-  // Combiner q (texte brut) + activite_principale (NAF) simultanément pour
-  // maximiser la précision : le moteur Elasticsearch de l'API gère les deux.
-  if (secteur.trim()) {
-    params.set("q", secteur.trim().slice(0, 50));
-  }
+  // Stratégie : NAF en priorité (recherche par secteur), q en fallback uniquement.
+  // NE PAS combiner les deux en AND — le paramètre q cherche dans les noms d'entreprises,
+  // pas dans les métiers, donc "Chargé de communication" + NAF donne zéro résultat.
   if (nafCodes && nafCodes.length > 0) {
     params.set("activite_principale", nafCodes.join(","));
+  } else if (secteur.trim()) {
+    params.set("q", secteur.trim().slice(0, 50));
   }
 
   if (departement) params.set("departement", departement);
@@ -716,21 +716,6 @@ export async function GET(req: NextRequest) {
   };
 
   let results = data.results ?? [];
-
-  // ── Post-filtre : exclure les entreprises dont le NAF est clairement hors-sujet
-  // On ne filtre que si l'IA a retourné des codes — pas sur le fallback statique seul.
-  // On compare les 2 premiers chiffres du code NAF (division INSEE) pour détecter
-  // les incohérences flagrantes (ex: cherche "community manager" → vire "35.11Z" énergie).
-  if (nafCodes && nafCodes.length > 0) {
-    // Extraire les préfixes de division (2 chiffres) des codes LLM autorisés
-    const allowedPrefixes = new Set(nafCodes.map((c) => c.slice(0, 2)));
-    results = results.filter((r) => {
-      const naf = r.activite_principale ?? r.siege?.activite_principale ?? "";
-      if (!naf) return true; // pas de NAF → garder par défaut
-      const prefix = naf.slice(0, 2);
-      return allowedPrefixes.has(prefix);
-    });
-  }
 
   // Fusion TPE si nécessaire
   if (!allTailles && includeNonRenseigne && categoriesWanted.length > 0) {
