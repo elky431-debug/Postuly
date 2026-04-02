@@ -487,7 +487,6 @@ const NAF_CACHE_TTL = 1000 * 60 * 60 * 24; // 24h
 async function getNafCodesFromLLM(secteur: string): Promise<string[] | null> {
   const key = secteur.toLowerCase().trim();
 
-  // On ne cache que les succès — jamais les échecs (clé absente, timeout, etc.)
   const cached = nafLlmCache.get(key);
   if (cached && Date.now() - cached.ts < NAF_CACHE_TTL) return cached.codes;
 
@@ -504,54 +503,70 @@ async function getNafCodesFromLLM(secteur: string): Promise<string[] | null> {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 200,
+        max_tokens: 300,
         messages: [
           {
             role: "user",
-            content: `Tu es expert en nomenclature NAF 2008 (INSEE France). Pour le terme de recherche "${secteur}", retourne UNIQUEMENT les codes NAF qui correspondent EXACTEMENT à cette activité spécifique.
+            content: `Tu es expert en nomenclature NAF 2008 (INSEE France).
 
-Règles IMPORTANTES :
-- Sois très précis et littéral. "restauration rapide" → ["56.10C"] seulement (PAS 56.10A qui est la restauration traditionnelle/gastronomique).
-- "sport" → codes clubs sportifs/salles de sport, PAS transport
-- Ne mets que les codes qui correspondent vraiment à ce terme précis
-- Maximum 5 codes, seulement les plus pertinents
-- Les codes doivent exister dans la nomenclature NAF 2008 officielle
-- Format exact : XX.XXX (ex: 56.10C, 73.11Z)
+Terme de recherche : "${secteur}"
 
-Réponds UNIQUEMENT avec un tableau JSON, sans aucun texte avant ou après. Exemple: ["56.10C"]`,
+RÈGLE CRITIQUE — Distinction rôle/employeur :
+Si le terme désigne un POSTE INTERNE (community manager, développeur, RH, marketing, chef de projet, comptable, commercial...), retourne les codes NAF des ENTREPRISES QUI EMPLOIENT ce profil, pas le secteur du métier lui-même.
+Exemples :
+- "community manager" → entreprises de toutes tailles qui recrutent des CM : agences de communication (73.11Z), tech (62.01Z), e-commerce (47.91A), médias (63.12Z)
+- "développeur" → ESN/SSII (62.01Z, 62.02A), éditeurs logiciels (58.29A), startups tech (63.11Z)
+- "comptable" → cabinets comptables (69.20Z), mais AUSSI toute entreprise ayant un service compta
+- "restauration rapide" → UNIQUEMENT les fast-foods (56.10C), pas les postes en restauration
+
+AUTRES RÈGLES :
+- Maximum 5 codes, du plus spécifique au plus général
+- Chaque code doit exister dans la nomenclature NAF 2008 officielle (format XX.XXX)
+- Attribue un score de confiance entre 0 et 1 par code
+- N'inclus que les codes avec confiance ≥ 0.6
+
+Réponds UNIQUEMENT avec un tableau JSON sans texte avant/après.
+Format exact : [{"code":"62.01Z","confidence":0.95},{"code":"62.02A","confidence":0.80}]`,
           },
         ],
       }),
       signal: AbortSignal.timeout(15000),
     });
 
-    if (!res.ok) return null; // pas de cache sur erreur API
+    if (!res.ok) return null;
 
-    const data = (await res.json()) as {
-      content?: Array<{ text?: string }>;
-    };
+    const data = (await res.json()) as { content?: Array<{ text?: string }> };
     const text = data.content?.[0]?.text?.trim() ?? "";
     const match = text.match(/\[[\s\S]*?\]/);
     if (!match) return null;
 
-    const codes: unknown = JSON.parse(match[0]);
-    if (!Array.isArray(codes) || codes.length === 0) return null;
+    const parsed: unknown = JSON.parse(match[0]);
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
 
-    // Validation : format correct ET code existant dans NAF 2008
-    const valid = (codes as unknown[])
-      .filter((c): c is string =>
-        typeof c === "string" &&
-        /^\d{2}\.\d{2}[A-Z]$/.test(c) &&
-        c in NAF_LABELS  // rejette les codes inventés par le LLM
-      );
+    // Accepte soit [{"code":"X","confidence":0.9}] soit ["X"] (fallback format)
+    const valid: string[] = (parsed as unknown[])
+      .flatMap((item): string[] => {
+        if (typeof item === "string") {
+          return /^\d{2}\.\d{2}[A-Z]$/.test(item) && item in NAF_LABELS ? [item] : [];
+        }
+        if (typeof item === "object" && item !== null) {
+          const obj = item as Record<string, unknown>;
+          const code = typeof obj.code === "string" ? obj.code : "";
+          const conf = typeof obj.confidence === "number" ? obj.confidence : 1;
+          if (/^\d{2}\.\d{2}[A-Z]$/.test(code) && code in NAF_LABELS && conf >= 0.6) {
+            return [code];
+          }
+        }
+        return [];
+      })
+      .slice(0, 5);
 
     if (valid.length === 0) return null;
 
-    // Mise en cache uniquement si on a des codes valides
     nafLlmCache.set(key, { codes: valid, ts: Date.now() });
     return valid;
   } catch {
-    return null; // timeout ou erreur réseau → pas de cache, on réessaie la prochaine fois
+    return null;
   }
 }
 
@@ -643,11 +658,13 @@ export async function GET(req: NextRequest) {
     etat_administratif: "A",
   });
 
-  // Filtre NAF si codes reconnus, sinon recherche textuelle dans les noms
+  // Combiner q (texte brut) + activite_principale (NAF) simultanément pour
+  // maximiser la précision : le moteur Elasticsearch de l'API gère les deux.
+  if (secteur.trim()) {
+    params.set("q", secteur.trim().slice(0, 50));
+  }
   if (nafCodes && nafCodes.length > 0) {
     params.set("activite_principale", nafCodes.join(","));
-  } else if (secteur.trim()) {
-    params.set("q", secteur.trim().slice(0, 50));
   }
 
   if (departement) params.set("departement", departement);
@@ -683,6 +700,21 @@ export async function GET(req: NextRequest) {
   };
 
   let results = data.results ?? [];
+
+  // ── Post-filtre : exclure les entreprises dont le NAF est clairement hors-sujet
+  // On ne filtre que si l'IA a retourné des codes — pas sur le fallback statique seul.
+  // On compare les 2 premiers chiffres du code NAF (division INSEE) pour détecter
+  // les incohérences flagrantes (ex: cherche "community manager" → vire "35.11Z" énergie).
+  if (nafCodes && nafCodes.length > 0) {
+    // Extraire les préfixes de division (2 chiffres) des codes LLM autorisés
+    const allowedPrefixes = new Set(nafCodes.map((c) => c.slice(0, 2)));
+    results = results.filter((r) => {
+      const naf = r.activite_principale ?? r.siege?.activite_principale ?? "";
+      if (!naf) return true; // pas de NAF → garder par défaut
+      const prefix = naf.slice(0, 2);
+      return allowedPrefixes.has(prefix);
+    });
+  }
 
   // Fusion TPE si nécessaire
   if (!allTailles && includeNonRenseigne && categoriesWanted.length > 0) {
