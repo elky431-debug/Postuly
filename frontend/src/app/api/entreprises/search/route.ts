@@ -484,8 +484,12 @@ const nafLlmCache = new Map<string, { codes: string[] | null; ts: number }>();
 const NAF_CACHE_TTL = 1000 * 60 * 60 * 24; // 24h
 
 /** Résout un terme libre → codes NAF via Claude Sonnet. Retourne null si échec. */
-async function getNafCodesFromLLM(secteur: string): Promise<string[] | null> {
-  const key = secteur.toLowerCase().trim();
+async function getNafCodesFromLLM(
+  secteur: string,
+  taille: string,
+  ville: string,
+): Promise<string[] | null> {
+  const key = `${secteur.toLowerCase().trim()}|${taille}|${ville.toLowerCase().trim()}`;
 
   const cached = nafLlmCache.get(key);
   if (cached && Date.now() - cached.ts < NAF_CACHE_TTL) return cached.codes;
@@ -510,14 +514,26 @@ async function getNafCodesFromLLM(secteur: string): Promise<string[] | null> {
             content: `Tu es expert en nomenclature NAF 2008 (INSEE France).
 
 Terme de recherche : "${secteur}"
+Taille d'entreprise ciblée : "${taille}"
+Localisation : "${ville}"
 
 RÈGLE CRITIQUE — Distinction rôle/employeur :
 Si le terme désigne un POSTE INTERNE (community manager, développeur, RH, marketing, chef de projet, comptable, commercial...), retourne les codes NAF des ENTREPRISES QUI EMPLOIENT ce profil, pas le secteur du métier lui-même.
 Exemples :
-- "community manager" → entreprises de toutes tailles qui recrutent des CM : agences de communication (73.11Z), tech (62.01Z), e-commerce (47.91A), médias (63.12Z)
+- "community manager" → agences de communication (73.11Z), tech (62.01Z), e-commerce (47.91A), médias (63.12Z)
 - "développeur" → ESN/SSII (62.01Z, 62.02A), éditeurs logiciels (58.29A), startups tech (63.11Z)
 - "comptable" → cabinets comptables (69.20Z), mais AUSSI toute entreprise ayant un service compta
 - "restauration rapide" → UNIQUEMENT les fast-foods (56.10C), pas les postes en restauration
+
+RÈGLE TAILLE :
+Adapte les codes NAF selon la taille ciblée.
+- Grande entreprise → privilégie les secteurs avec de grands groupes connus (industrie, banque, télécoms, retail, énergie)
+- PME → privilégie services, agences, cabinets
+- TPE → artisanat, commerce local, professions libérales
+
+RÈGLE EXCLUSION :
+Exclus absolument les codes NAF qui produisent du bruit évident.
+Exemples : ne jamais retourner "Production d'électricité" pour "community manager", ni "Portails Internet" pour un poste marketing classique.
 
 AUTRES RÈGLES :
 - Maximum 5 codes, du plus spécifique au plus général
@@ -526,7 +542,7 @@ AUTRES RÈGLES :
 - N'inclus que les codes avec confiance ≥ 0.6
 
 Réponds UNIQUEMENT avec un tableau JSON sans texte avant/après.
-Format exact : [{"code":"62.01Z","confidence":0.95},{"code":"62.02A","confidence":0.80}]`,
+Format exact : [{"code":"62.01Z","label":"Programmation informatique","confidence":0.95},{"code":"62.02A","label":"Conseil en systèmes informatiques","confidence":0.80}]`,
           },
         ],
       }),
@@ -543,7 +559,7 @@ Format exact : [{"code":"62.01Z","confidence":0.95},{"code":"62.02A","confidence
     const parsed: unknown = JSON.parse(match[0]);
     if (!Array.isArray(parsed) || parsed.length === 0) return null;
 
-    // Accepte soit [{"code":"X","confidence":0.9}] soit ["X"] (fallback format)
+    // Accepte {"code","label","confidence"}, {"code","confidence"}, ou ["X"] (fallback)
     const valid: string[] = (parsed as unknown[])
       .flatMap((item): string[] => {
         if (typeof item === "string") {
@@ -625,10 +641,10 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // 1. Essai LLM (Claude Haiku) — rapide, précis, mis en cache 24h
+  // 1. Essai LLM (Claude Sonnet) — précis, mis en cache 24h
   // 2. Fallback NAF_MAP local si l'IA est indisponible ou clé absente
   let nafCodes: string[] | null = secteur.trim()
-    ? await getNafCodesFromLLM(secteur.trim())
+    ? await getNafCodesFromLLM(secteur.trim(), taillesParam, ville.trim())
     : null;
 
   if (nafCodes === null && secteur.trim()) {
