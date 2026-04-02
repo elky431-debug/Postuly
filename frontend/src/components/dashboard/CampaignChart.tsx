@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  Bar,
-  BarChart,
+  Area,
+  AreaChart,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
@@ -19,7 +19,6 @@ type CampaignChartProps = {
 };
 
 const ORANGE = "#F97316";
-const GRID = "#F1F0EE";
 
 export function CampaignChart({ period, values, labels: labelsProp }: CampaignChartProps) {
   const defaults: Record<ChartPeriod, { labels: string[]; count: number }> = {
@@ -34,19 +33,25 @@ export function CampaignChart({ period, values, labels: labelsProp }: CampaignCh
   const heights = values?.length === def.count ? values : Array(def.count).fill(0);
   const data = labels.map((name, i) => ({ name, v: heights[i] ?? 0 }));
 
-  const showEveryN = period === "mois" ? 5 : 1;
+  const showEveryN = period === "mois" ? 4 : 0;
 
   return (
     <div className="h-[200px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barCategoryGap="40%">
-          <CartesianGrid strokeDasharray="2 4" stroke={GRID} vertical={false} />
+        <AreaChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+          <defs>
+            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={ORANGE} stopOpacity={0.18} />
+              <stop offset="100%" stopColor={ORANGE} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 6" stroke="#EDEBE9" vertical={false} />
           <XAxis
             dataKey="name"
             tick={{ fontSize: 11, fill: "#A8A29E" }}
             axisLine={false}
             tickLine={false}
-            interval={showEveryN - 1}
+            interval={showEveryN > 0 ? showEveryN - 1 : 0}
           />
           <YAxis
             tick={{ fontSize: 11, fill: "#A8A29E" }}
@@ -55,7 +60,7 @@ export function CampaignChart({ period, values, labels: labelsProp }: CampaignCh
             allowDecimals={false}
           />
           <Tooltip
-            cursor={{ fill: "rgba(249, 115, 22, 0.06)", radius: 4 }}
+            cursor={{ stroke: ORANGE, strokeWidth: 1, strokeDasharray: "4 3" }}
             formatter={(v) => [String(v ?? 0), "Candidatures"]}
             contentStyle={{
               fontSize: 12,
@@ -69,18 +74,19 @@ export function CampaignChart({ period, values, labels: labelsProp }: CampaignCh
             }}
             labelStyle={{ color: "#78716C", marginBottom: 2 }}
           />
-          <Bar
+          <Area
+            type="monotone"
             dataKey="v"
-            radius={[5, 5, 0, 0]}
-            fill={ORANGE}
-            fillOpacity={0.8}
-            activeBar={{ fill: ORANGE, fillOpacity: 1 }}
-            maxBarSize={period === "mois" ? 16 : period === "hier" ? 24 : 32}
+            stroke={ORANGE}
+            strokeWidth={2.5}
+            fill="url(#areaGradient)"
+            dot={false}
+            activeDot={{ r: 5, fill: ORANGE, strokeWidth: 2, stroke: "#fff" }}
             isAnimationActive
-            animationDuration={400}
+            animationDuration={500}
             animationEasing="ease-out"
           />
-        </BarChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );
