@@ -1,12 +1,13 @@
 /**
- * Service La Bonne Alternance (LBA)
- * API officielle gouvernement français — aucune clé requise, usage non lucratif.
- * https://labonnealternance.apprentissage.beta.gouv.fr
+ * Service La Bonne Alternance — API apprentissage.beta.gouv.fr v2
+ * Nouvelle API unifiée (remplace l'ancienne labonnealternance.apprentissage.beta.gouv.fr/api/V1)
+ *
+ * Clé API requise : variable d'env LBA_API_KEY
+ * Obtenir une clé : https://api.apprentissage.beta.gouv.fr
  */
 
-const LBA_BASE = "https://labonnealternance.apprentissage.beta.gouv.fr";
-const CALLER   = "postuly";
-const TIMEOUT  = 8_000;
+const LBA_BASE = "https://api.apprentissage.beta.gouv.fr/api";
+const TIMEOUT  = 10_000;
 
 // ─── Retry ────────────────────────────────────────────────────────────────────
 
@@ -22,15 +23,15 @@ async function fetchWithRetry(
         ...options,
         signal: AbortSignal.timeout(TIMEOUT),
       });
-      // Rate-limit → back off puis réessaye
-      if (res.status === 429 && attempt < retries) {
-        await delay(1_000 * (attempt + 1));
+      if (res.status === 419 && attempt < retries) {
+        // Rate-limit (419 = Too Many Requests sur cette API)
+        await delay(1_500 * (attempt + 1));
         continue;
       }
       return res;
     } catch (err) {
       lastErr = err;
-      if (attempt < retries) await delay(500 * (attempt + 1));
+      if (attempt < retries) await delay(600 * (attempt + 1));
     }
   }
   throw lastErr;
@@ -40,72 +41,93 @@ function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function lbaHeaders(): Record<string, string> {
+  const key = process.env.LBA_API_KEY?.trim();
+  if (!key) throw new Error("Variable d'env LBA_API_KEY manquante. Obtiens une clé sur https://api.apprentissage.beta.gouv.fr");
+  return { Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
+}
+
 // ─── Types publics ────────────────────────────────────────────────────────────
 
-export type LbaJobType = "recruteur_lba" | "offre_lba" | "offre_partenaire";
-
-/** Entreprise identifiée par algo LBA — pas d'offre publiée, candidature spontanée. */
+/** Entreprise sans offre publiée — candidature spontanée */
 export interface LbaRecruteur {
-  id: string;
-  siret: string;
-  name: string;
-  address: string;
-  naf: string;
-  nafText: string;
-  distance: number;
-  url: string;
-  type: "recruteur_lba";
-  contactEmail?: string;
-  contactPhone?: string;
+  id:           string;
+  recipientId:  string;  // pour POST /job/v1/apply
+  siret:        string;
+  name:         string;
+  address:      string;
+  naf:          string;
+  nafText:      string;
+  size:         string;
+  website:      string;
+  phone:        string;
+  applyUrl:     string;
+  score:        number;  // probabilité recrutement alternance (0–1 float ou 1–3 stars)
+  type:         "recruteur_lba";
   already_applied?: boolean;
 }
 
-/** Offre d'emploi LBA directe ou partenaire France Travail. */
+/** Offre d'emploi en alternance (LBA directe ou France Travail) */
 export interface LbaOffre {
-  id: string;
-  title: string;
-  companyName: string;
-  siret?: string;
-  city: string;
-  address?: string;
-  url: string;
-  description?: string;
-  contractDuration?: string;
-  type: "offre_lba" | "offre_partenaire";
-  contactEmail?: string;
+  id:               string;
+  recipientId:      string;  // pour POST /job/v1/apply
+  partnerLabel:     string;  // "offres_emploi_lba" | "France Travail" | ...
+  title:            string;
+  companyName:      string;
+  siret:            string;
+  address:          string;
+  contractDuration: number | null;  // mois
+  url:              string;
+  description:      string;
+  romeCodes:        string[];
+  type:             "offre_lba" | "offre_partenaire";
   already_applied?: boolean;
 }
 
 export interface LbaSearchResult {
-  recruteurs: LbaRecruteur[];
-  offres_lba: LbaOffre[];
-  offres_partenaires: LbaOffre[];
+  recruteurs:  LbaRecruteur[];
+  offres:      LbaOffre[];
+  warnings:    { code: string; message: string }[];
 }
 
 export interface CandidaturePayload {
-  firstName: string;
-  lastName:  string;
-  email:     string;
-  phone:     string;
-  cvBlob:    Blob;
-  cvFileName: string;
-  message?:  string;
+  firstName:   string;
+  lastName:    string;
+  email:       string;
+  phone:       string;
+  cvBase64:    string;
+  cvFileName:  string;
+  message?:    string;
 }
 
-// ─── Helpers de mapping (structure API peut varier) ───────────────────────────
-
-function toArr(v: unknown): unknown[] {
-  if (!v) return [];
-  if (Array.isArray(v)) return v;
-  const results = (v as { results?: unknown }).results;
-  return Array.isArray(results) ? results : [];
-}
+// ─── Helpers de mapping ───────────────────────────────────────────────────────
 
 function str(v: unknown): string {
   return v != null ? String(v) : "";
 }
 
-// ─── Recherche d'opportunités ─────────────────────────────────────────────────
+function mapLocation(loc: Record<string, unknown>): string {
+  return str(loc.label ?? loc.address ?? loc.full_address ?? "");
+}
+
+function mapWorkplace(wp: Record<string, unknown>): {
+  name: string; siret: string; address: string; naf: string; nafText: string; size: string; website: string;
+} {
+  const loc  = (wp.location  ?? {}) as Record<string, unknown>;
+  const dom  = (wp.domain    ?? {}) as Record<string, unknown>;
+  const idfs = (wp.identifier ?? {}) as Record<string, unknown>;
+  return {
+    name:    str(wp.name    ?? wp.brand ?? wp.legal_name),
+    siret:   str(wp.siret   ?? idfs.siret),
+    address: mapLocation(loc),
+    naf:     str(dom.idcc   ?? wp.naf ?? ""),
+    nafText: str(dom.label  ?? dom.naf_text ?? ""),
+    size:    str(wp.size),
+    website: str(wp.website),
+  };
+}
+
+// ─── Recherche ────────────────────────────────────────────────────────────────
 
 export async function searchOpportunites(
   rome: string,
@@ -118,85 +140,77 @@ export async function searchOpportunites(
     latitude:  String(lat),
     longitude: String(lng),
     radius:    String(radius),
-    caller:    CALLER,
   });
 
-  const res = await fetchWithRetry(`${LBA_BASE}/api/V1/jobs?${params}`);
+  const res = await fetchWithRetry(
+    `${LBA_BASE}/job/v1/search?${params}`,
+    { headers: lbaHeaders() }
+  );
 
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error(`LBA API ${res.status}: ${txt.slice(0, 200)}`);
+    let detail = "";
+    try { detail = (JSON.parse(txt) as { message?: string }).message ?? txt; } catch { detail = txt; }
+    throw new Error(`LBA API ${res.status}: ${detail.slice(0, 200)}`);
   }
 
   const raw = await res.json() as {
-    lbaCompanies?: unknown;
-    matchas?:      unknown;
-    peJobs?:       unknown;
+    jobs?:      unknown[];
+    recruiters?: unknown[];
+    warnings?:  { code: string; message: string }[];
   };
 
-  // ── Recruteurs LBA ──
-  const recruteurs: LbaRecruteur[] = toArr(raw.lbaCompanies).map((c) => {
-    const item    = c as Record<string, unknown>;
-    const co      = (item.company ?? {})                     as Record<string, unknown>;
-    const addr    = (co.address ?? co.headquartersAdress ?? {}) as Record<string, unknown>;
-    const contact = (item.contact ?? {})                     as Record<string, unknown>;
+  const recruteurs: LbaRecruteur[] = (raw.recruiters ?? []).map((r) => {
+    const item  = r as Record<string, unknown>;
+    const id    = (item.identifier ?? {}) as Record<string, unknown>;
+    const wp    = (item.workplace   ?? {}) as Record<string, unknown>;
+    const apply = (item.apply       ?? {}) as Record<string, unknown>;
+    const mapped = mapWorkplace(wp);
+    const rawScore = item.establishment_score ?? item.score ?? id.stars ?? id.establishment_score ?? 0;
     return {
-      id:           str(item._id ?? co.siret),
-      siret:        str(co.siret),
-      name:         str(co.name),
-      address:      str(addr.label ?? addr.street ?? addr.fullAddress),
-      naf:          str(co.naf),
-      nafText:      str(co.nafText ?? co.nafLabel),
-      distance:     Number(item.distance ?? 0),
-      url:          str(item.url),
-      type:         "recruteur_lba",
-      contactEmail: str(contact.email) || undefined,
-      contactPhone: str(contact.phone) || undefined,
+      id:          str(id.id),
+      recipientId: str(apply.recipient_id),
+      ...mapped,
+      phone:    str(apply.phone),
+      applyUrl: str(apply.url),
+      score:    Number(rawScore),
+      type:     "recruteur_lba" as const,
+    };
+  }).sort((a, b) => b.score - a.score);
+
+  const offres: LbaOffre[] = (raw.jobs ?? []).map((j) => {
+    const item     = j as Record<string, unknown>;
+    const id       = (item.identifier ?? {}) as Record<string, unknown>;
+    const wp       = (item.workplace   ?? {}) as Record<string, unknown>;
+    const apply    = (item.apply       ?? {}) as Record<string, unknown>;
+    const offer    = (item.offer       ?? {}) as Record<string, unknown>;
+    const contract = (item.contract    ?? {}) as Record<string, unknown>;
+    const mapped   = mapWorkplace(wp);
+    const partnerLabel = str(id.partner_label);
+    return {
+      id:               str(id.id ?? id.partner_job_id),
+      recipientId:      str(apply.recipient_id),
+      partnerLabel,
+      title:            str(offer.title),
+      companyName:      mapped.name,
+      siret:            mapped.siret,
+      address:          mapped.address,
+      contractDuration: contract.duration != null ? Number(contract.duration) : null,
+      url:              str(apply.url),
+      description:      str(offer.description),
+      romeCodes:        Array.isArray(offer.rome_codes) ? (offer.rome_codes as string[]) : [],
+      type:             partnerLabel === "offres_emploi_lba" ? "offre_lba" : "offre_partenaire",
     };
   });
 
-  // ── Offres LBA directes (matchas) ──
-  const offres_lba: LbaOffre[] = toArr(raw.matchas).map((o) => {
-    const item     = o as Record<string, unknown>;
-    const co       = (item.company  ?? {}) as Record<string, unknown>;
-    const place    = (item.place    ?? {}) as Record<string, unknown>;
-    const contact  = (item.contact  ?? {}) as Record<string, unknown>;
-    const contract = (item.contract ?? {}) as Record<string, unknown>;
-    return {
-      id:               str(item._id),
-      title:            str(item.title) || "Offre en alternance",
-      companyName:      str(co.name),
-      siret:            str(co.siret) || undefined,
-      city:             str(place.city),
-      address:          str(place.fullAddress) || undefined,
-      url:              str(item.url),
-      description:      str(item.description) || undefined,
-      contractDuration: str(contract.duration) || undefined,
-      type:             "offre_lba",
-      contactEmail:     str(contact.email) || undefined,
-    };
-  });
-
-  // ── Offres partenaires France Travail (peJobs) ──
-  const offres_partenaires: LbaOffre[] = toArr(raw.peJobs).map((o) => {
-    const item  = o as Record<string, unknown>;
-    const co    = (item.company  ?? {}) as Record<string, unknown>;
-    const place = (item.place ?? item.location ?? {}) as Record<string, unknown>;
-    return {
-      id:          str(item.id ?? item._id),
-      title:       str(item.title) || "Offre partenaire",
-      companyName: str(co.name),
-      city:        str(place.city ?? place.libelle),
-      url:         str(item.url),
-      description: str(item.description) || undefined,
-      type:        "offre_partenaire",
-    };
-  });
-
-  return { recruteurs, offres_lba, offres_partenaires };
+  return {
+    recruteurs,
+    offres,
+    warnings: raw.warnings ?? [],
+  };
 }
 
-// ─── Géocodage (API adresse gouvernement) ────────────────────────────────────
+// ─── Géocodage ────────────────────────────────────────────────────────────────
 
 export async function geocodeCity(
   city: string
@@ -222,30 +236,40 @@ export async function geocodeCity(
   }
 }
 
-// ─── Envoi de candidature ─────────────────────────────────────────────────────
+// ─── Envoi de candidature (JSON + base64) ─────────────────────────────────────
 
 export async function sendCandidatureLba(
-  jobId: string,
+  recipientId: string,
   payload: CandidaturePayload
-): Promise<{ ok: boolean; error?: string }> {
-  const fd = new FormData();
-  fd.append("firstName", payload.firstName);
-  fd.append("lastName",  payload.lastName);
-  fd.append("email",     payload.email);
-  fd.append("phone",     payload.phone);
-  if (payload.message) fd.append("message", payload.message);
-  fd.append("cv", payload.cvBlob, payload.cvFileName);
+): Promise<{ ok: boolean; applicationId?: string; error?: string }> {
+  const body = {
+    applicant_first_name:        payload.firstName,
+    applicant_last_name:         payload.lastName,
+    applicant_email:             payload.email,
+    applicant_phone:             payload.phone,
+    applicant_attachment_name:   payload.cvFileName.endsWith(".pdf") ? payload.cvFileName : `${payload.cvFileName}.pdf`,
+    applicant_attachment_content: payload.cvBase64,
+    recipient_id:                recipientId,
+    ...(payload.message ? { applicant_message: payload.message } : {}),
+  };
 
   try {
     const res = await fetchWithRetry(
-      `${LBA_BASE}/api/V1/application/job/${encodeURIComponent(jobId)}?caller=${CALLER}`,
-      { method: "POST", body: fd }
+      `${LBA_BASE}/job/v1/apply`,
+      {
+        method:  "POST",
+        headers: lbaHeaders(),
+        body:    JSON.stringify(body),
+      }
     );
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
-      return { ok: false, error: `LBA ${res.status}: ${txt.slice(0, 200)}` };
+      let detail = "";
+      try { detail = (JSON.parse(txt) as { message?: string; error?: string }).message ?? txt; } catch { detail = txt; }
+      return { ok: false, error: `LBA ${res.status}: ${detail.slice(0, 200)}` };
     }
-    return { ok: true };
+    const result = await res.json() as { id?: string };
+    return { ok: true, applicationId: result.id };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Erreur réseau LBA" };
   }

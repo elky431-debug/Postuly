@@ -6,7 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 
 interface ApplyBody {
-  jobId:       string;
+  recipientId: string;  // apply.recipient_id from LBA search response
+  jobId:       string;  // for DB logging
   jobType:     "recruteur_lba" | "offre_lba";
   siret?:      string;
   companyName: string;
@@ -31,10 +32,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Body JSON invalide" }, { status: 400 });
   }
 
-  const { jobId, jobType, siret, companyName, romeCode, city, message } = body;
-  if (!jobId || !jobType || !companyName || !romeCode) {
+  const { recipientId, jobId, jobType, siret, companyName, romeCode, city, message } = body;
+  if (!recipientId || !jobId || !jobType || !companyName || !romeCode) {
     return NextResponse.json(
-      { error: "jobId, jobType, companyName et romeCode sont requis" },
+      { error: "recipientId, jobId, jobType, companyName et romeCode sont requis" },
       { status: 400 }
     );
   }
@@ -85,8 +86,8 @@ export async function POST(req: NextRequest) {
   const email     = parsed?.email || user.email || "";
   const phone     = parsed?.phone || "0600000000";
 
-  // ── Téléchargement du CV ──────────────────────────────────────────────────
-  let cvBlob: Blob;
+  // ── Téléchargement du CV → base64 ────────────────────────────────────────
+  let cvBase64: string;
   try {
     const cvRes = await fetch(profile.cv_url as string, {
       signal: AbortSignal.timeout(10_000),
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
       throw new Error(`HTTP ${cvRes.status}`);
     }
     const buf = await cvRes.arrayBuffer();
-    cvBlob = new Blob([buf], { type: "application/pdf" });
+    cvBase64 = Buffer.from(buf).toString("base64");
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
@@ -105,12 +106,12 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Envoi via API LBA ─────────────────────────────────────────────────────
-  const lbaResult = await sendCandidatureLba(jobId, {
+  const lbaResult = await sendCandidatureLba(recipientId, {
     firstName,
     lastName,
     email,
     phone,
-    cvBlob,
+    cvBase64,
     cvFileName: "cv.pdf",
     message: message?.trim() || undefined,
   });

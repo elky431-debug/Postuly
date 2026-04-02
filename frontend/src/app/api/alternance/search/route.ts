@@ -84,11 +84,14 @@ export async function GET(req: NextRequest) {
   const tag = <T extends { id: string }>(items: T[]) =>
     items.map((item) => ({ ...item, already_applied: appliedIds.has(item.id) }));
 
+  const offres_lba         = result.offres.filter((o) => o.type === "offre_lba");
+  const offres_partenaires = result.offres.filter((o) => o.type === "offre_partenaire");
+
   return NextResponse.json({
     recruteurs:         tag(result.recruteurs),
-    offres_lba:         tag(result.offres_lba),
-    offres_partenaires: result.offres_partenaires, // redirection externe, pas de candidature LBA
-    total:              result.recruteurs.length + result.offres_lba.length + result.offres_partenaires.length,
+    offres_lba:         tag(offres_lba),
+    offres_partenaires,               // redirection externe, pas de candidature LBA
+    total:              result.recruteurs.length + offres_lba.length + offres_partenaires.length,
     cityLabel,
     lat,
     lng,
