@@ -526,10 +526,11 @@ Exemples :
 - "restauration rapide" → UNIQUEMENT les fast-foods (56.10C), pas les postes en restauration
 
 RÈGLE TAILLE :
-Adapte les codes NAF selon la taille ciblée.
-- Grande entreprise → privilégie les secteurs avec de grands groupes connus (industrie, banque, télécoms, retail, énergie)
-- PME → privilégie services, agences, cabinets
-- TPE → artisanat, commerce local, professions libérales
+Adapte les codes NAF selon la taille ciblée, MAIS reste dans le secteur pertinent pour le terme recherché.
+- Grande entreprise → inclus les grands groupes du secteur pertinent (ex: pour "comm" → grands groupes de communication, médias, retail — PAS énergie ni industrie lourde)
+- PME → privilégie services, agences, cabinets du secteur
+- TPE → artisanat, commerce local, professions libérales du secteur
+NE JAMAIS ajouter des secteurs non liés au terme sous prétexte qu'ils ont de grandes entreprises.
 
 RÈGLE EXCLUSION :
 Exclus absolument les codes NAF qui produisent du bruit évident.
@@ -804,9 +805,19 @@ export async function GET(req: NextRequest) {
     }];
   });
 
+  // Post-filtre strict : exclure les entreprises dont le NAF ne figure pas
+  // dans les codes retournés par le LLM. Appliqué sur le tableau final pour
+  // couvrir aussi les résultats de la fusion TPE.
+  const filteredEntreprises = nafCodes && nafCodes.length > 0
+    ? entreprises.filter((e) => {
+        if (!e.naf) return true; // pas de NAF connu → garder
+        return nafCodes.includes(e.naf);
+      })
+    : entreprises;
+
   return NextResponse.json({
-    entreprises,
-    total: data.total_results ?? entreprises.length,
+    entreprises: filteredEntreprises,
+    total: data.total_results ?? filteredEntreprises.length,
     page: page - 1,
     totalPages: data.total_pages ?? 1,
   });
