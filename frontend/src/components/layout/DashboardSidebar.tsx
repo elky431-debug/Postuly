@@ -12,6 +12,7 @@ import {
   BookmarkCheck,
   UserRound,
   CreditCard,
+  RefreshCw,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
@@ -51,15 +52,22 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, badge: null as number | null, disabled: false },
-    { name: "Kanban", href: "/kanban", icon: Columns3, badge: null, disabled: false },
-    { name: "Entreprises", href: "/dashboard/entreprises", icon: Building2, badge: null, disabled: false },
+    { name: "Candidatures", href: "/kanban", icon: Columns3, badge: null, disabled: false },
     {
-      name: "Sélections",
+      name: "Recherche entreprise",
+      href: "/dashboard/entreprises",
+      icon: Building2,
+      badge: null,
+      disabled: false,
+    },
+    {
+      name: "Campagne",
       href: "/dashboard/selections",
       icon: BookmarkCheck,
       badge: selectionCount > 0 ? selectionCount : null,
       disabled: false,
     },
+    { name: "Relance", href: "/relance", icon: RefreshCw, badge: null, disabled: false },
     { name: "Mon CV", href: "/cv", icon: FileText, badge: null, disabled: false },
     { name: "Profil", href: "/dashboard/profil", icon: UserRound, badge: null, disabled: false },
     { name: "Paramètres", href: "/dashboard/parametres", icon: Settings, badge: null, disabled: false },
@@ -75,8 +83,8 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
   }
 
   return (
-    <aside className="flex min-h-screen w-[260px] min-w-[260px] flex-col border-r border-stone-200/80 bg-white">
-      <div className="shrink-0 border-b border-stone-100 bg-white px-5 pb-4 pt-7">
+    <aside className="flex min-h-screen w-[272px] min-w-[272px] flex-col border-r border-stone-200 bg-white">
+      <div className="shrink-0 border-b border-stone-100 bg-white px-6 pb-5 pt-7">
         <Link
           href="/dashboard"
           prefetch
@@ -87,8 +95,8 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
       </div>
 
       {/* Fond blanc ; onglet actif = pastille orange pleine largeur (type ref. cyan → orange) */}
-      <nav className="flex min-h-0 min-w-0 flex-1 flex-col bg-white px-2 py-3">
-        <div className="flex min-h-0 flex-1 flex-col justify-start gap-1">
+      <nav className="flex min-h-0 min-w-0 flex-1 flex-col bg-white px-3 py-4">
+        <div className="flex min-h-0 flex-1 flex-col justify-start gap-1.5">
           {navigation.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -104,15 +112,14 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
                   if (item.disabled) e.preventDefault();
                 }}
                 className={cn(
-                  "flex w-full min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] no-underline transition-all duration-150",
+                  "flex w-full min-w-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13px] no-underline transition-all",
                   item.disabled && "cursor-not-allowed opacity-40",
                   !item.disabled &&
                     !isActive &&
-                    "text-stone-700 hover:bg-stone-50 hover:text-stone-900",
+                    "text-stone-600 hover:bg-stone-100 hover:text-stone-900",
                   !item.disabled &&
                     isActive &&
-                    "bg-gradient-to-r from-[#FE6A2E] to-[#FF8A3D] font-semibold text-white shadow-md shadow-orange-500/35",
-                  !item.disabled && !isActive && "text-stone-700"
+                    "bg-orange-500 font-semibold text-white shadow-[0_8px_20px_-10px_rgba(249,115,22,0.8)]"
                 )}
               >
                 <Icon
@@ -128,9 +135,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
                   <span
                     className={cn(
                       "inline-flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] font-bold leading-none tabular-nums",
-                      isActive
-                        ? "bg-white/25 text-white ring-1 ring-white/30"
-                        : "bg-orange-500 text-white"
+                      isActive ? "bg-white/20 text-white" : "bg-orange-100 text-orange-600"
                     )}
                     aria-hidden
                   >
@@ -143,9 +148,9 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
         </div>
       </nav>
 
-      <div className="shrink-0 border-t border-stone-100 bg-white px-3 py-4">
-        <div className="flex items-center gap-3 rounded-xl border border-stone-200/80 bg-white p-2.5 shadow-sm">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stone-100 to-stone-200/80 text-xs font-bold text-stone-700 ring-2 ring-white">
+      <div className="shrink-0 border-t border-stone-100 bg-white px-4 py-4">
+        <div className="flex items-center gap-3 rounded-xl border border-stone-200 bg-stone-50/60 px-3 py-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-stone-700 ring-1 ring-stone-200">
             {userInitials(user)}
           </div>
           <div className="min-w-0 flex-1">

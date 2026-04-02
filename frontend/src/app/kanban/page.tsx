@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { KanbanBoardEditorial } from "@/components/kanban/kanban-board-editorial";
 import { Button } from "@/components/ui/button";
-import { Columns3, RefreshCw } from "lucide-react";
+import { Columns3, RefreshCw, Send } from "lucide-react";
 import { api } from "@/lib/api";
 import { getAccessTokenForApi } from "@/lib/auth-session";
 import type { Application, ApplicationStatus } from "@/lib/types";
@@ -13,8 +13,6 @@ import type { Application, ApplicationStatus } from "@/lib/types";
 /** Statuts affichés dans les 3 colonnes du Kanban. */
 const KANBAN_STATUSES: ApplicationStatus[] = [
   "sent",
-  "followed_up",
-  "rejected",
 ];
 
 export default function KanbanPage() {
@@ -24,6 +22,11 @@ export default function KanbanPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   /** Candidatures « répondu / entretien / offre » (hors colonnes). */
   const [countOtherPipeline, setCountOtherPipeline] = useState(0);
+  const [contractFilter, setContractFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [sortBy, setSortBy] = useState("recent");
 
   const loadApplications = useCallback(async () => {
     setLoadError(null);
@@ -85,62 +88,180 @@ export default function KanbanPage() {
     }
   }
 
+  const displayedApplications = useMemo(() => {
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    function appDate(app: Application): Date {
+      return new Date(app.sent_at ?? app.created_at);
+    }
+
+    const filtered = applications.filter((app) => {
+      const contract = (app.campaign?.contract_type ?? "").toLowerCase();
+      const dt = appDate(app);
+
+      const contractOk = contractFilter === "all" ? true : contract === contractFilter;
+
+      let dateOk = true;
+      if (dateFilter === "today") {
+        dateOk = dt >= startOfToday;
+      } else if (dateFilter === "7d") {
+        const cutoff = new Date(now);
+        cutoff.setDate(cutoff.getDate() - 7);
+        dateOk = dt >= cutoff;
+      } else if (dateFilter === "30d") {
+        const cutoff = new Date(now);
+        cutoff.setDate(cutoff.getDate() - 30);
+        dateOk = dt >= cutoff;
+      } else if (dateFilter === "custom") {
+        const from = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
+        const to = dateTo ? new Date(`${dateTo}T23:59:59`) : null;
+        if (from && dt < from) dateOk = false;
+        if (to && dt > to) dateOk = false;
+      }
+
+      return contractOk && dateOk;
+    });
+
+    const sorted = [...filtered];
+    if (sortBy === "recent") {
+      sorted.sort(
+        (a, b) =>
+          new Date(b.sent_at ?? b.created_at).getTime() -
+          new Date(a.sent_at ?? a.created_at).getTime()
+      );
+    } else if (sortBy === "oldest") {
+      sorted.sort(
+        (a, b) =>
+          new Date(a.sent_at ?? a.created_at).getTime() -
+          new Date(b.sent_at ?? b.created_at).getTime()
+      );
+    } else if (sortBy === "company_az") {
+      sorted.sort((a, b) =>
+        (a.company?.name ?? "").localeCompare(b.company?.name ?? "", "fr", {
+          sensitivity: "base",
+        })
+      );
+    }
+
+    return sorted;
+  }, [applications, contractFilter, dateFilter, dateFrom, dateTo, sortBy]);
+
+  const countSent = displayedApplications.filter((a) => a.status === "sent").length;
+
   return (
     <DashboardLayout>
-      <div
-        className="min-h-[calc(100vh-4rem)] px-5 pb-20 pt-8 sm:px-8 lg:px-12"
-        style={{
-          background:
-            "linear-gradient(180deg, #FFF9F5 0%, #F7F6F3 45%, #F3F1ED 100%)",
-          /* DM Sans : interface lisible, sans le rendu « étiré » de Syne */
-          fontFamily:
-            "var(--font-dm-sans), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif",
-        }}
-      >
-        <div className="mx-auto max-w-[1600px] space-y-8">
-          {/* En-tête */}
-          <header className="relative overflow-hidden rounded-3xl border border-orange-100/80 bg-white shadow-[0_4px_32px_-8px_rgba(254,106,46,0.12),0_1px_2px_rgba(0,0,0,0.04)]">
-            <div
-              className="h-1.5 w-full bg-gradient-to-r from-[#FE6A2E] via-[#FF9F4A] to-[#FFB347]"
-              aria-hidden
-            />
-            <div className="relative px-6 py-7 sm:px-10 sm:py-9">
-              <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-[#FE6A2E]/[0.06] blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-12 -left-10 h-36 w-36 rounded-full bg-[#FFB347]/[0.08] blur-2xl" />
-              <div className="relative flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-start gap-4">
-                  <span
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FFF1E3] to-white shadow-inner ring-1 ring-orange-100/90"
-                    aria-hidden
-                  >
-                    <Columns3 className="h-6 w-6 text-[#FE6A2E]" strokeWidth={2} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#FE6A2E]/90">
-                      Pipeline
-                    </p>
-                    <h1 className="mt-1 text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">
-                      Suivi des candidatures
-                    </h1>
-                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600">
-                      Glisse les cartes entre les colonnes pour mettre à jour le statut. Les réponses,
-                      entretiens et offres restent visibles depuis la fiche candidature.
-                    </p>
-                  </div>
+      <div className="min-h-[calc(100vh-4rem)] bg-white px-6 pb-20 pt-8 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-[1520px] space-y-6">
+          <header className="rounded-2xl border border-stone-200 bg-white px-6 py-5 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.45)]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 ring-1 ring-orange-100">
+                  <Columns3 className="h-5 w-5 text-orange-500" strokeWidth={2} />
+                </span>
+                <div>
+                  <h1 className="text-[28px] font-semibold tracking-tight text-stone-900">
+                    Kanban candidatures
+                  </h1>
+                  <p className="mt-1 text-sm text-stone-500">
+                    Déplace les cartes entre Envoyé, Relancé et Refusé pour mettre à jour le pipeline.
+                  </p>
                 </div>
-                <Button
-                  type="button"
-                  disabled={loading}
-                  size="sm"
-                  className="shrink-0 self-start rounded-xl border-0 bg-gradient-to-r from-[#FE6A2E] to-[#FFB347] px-5 text-white shadow-md shadow-orange-500/25 transition hover:brightness-[1.03] hover:shadow-lg disabled:opacity-40"
-                  onClick={loadApplications}
-                >
-                  <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                  Actualiser
-                </Button>
               </div>
+              <Button
+                type="button"
+                disabled={loading}
+                size="sm"
+                className="shrink-0 rounded-xl bg-orange-500 px-5 text-white shadow-[0_10px_24px_-10px_rgba(249,115,22,0.75)] transition hover:bg-orange-600 disabled:opacity-40"
+                onClick={loadApplications}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                Actualiser
+              </Button>
             </div>
           </header>
+
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-1">
+            <div className="rounded-xl border border-stone-200 bg-white p-4">
+              <div className="flex items-center gap-2 text-stone-500">
+                <Send className="h-4 w-4 text-orange-500" />
+                <span className="text-xs font-medium">Envoyé</span>
+              </div>
+              <p className="mt-2 text-2xl font-semibold tabular-nums text-stone-900">{countSent}</p>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-stone-200 bg-white p-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <label>
+                <span className="mb-1.5 block text-xs font-medium text-stone-500">Type de contrat</span>
+                <select
+                  value={contractFilter}
+                  onChange={(e) => setContractFilter(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none focus:border-orange-300"
+                >
+                  <option value="all">Tous</option>
+                  <option value="cdi">CDI</option>
+                  <option value="cdd">CDD</option>
+                  <option value="stage">Stage</option>
+                  <option value="alternance">Alternance</option>
+                  <option value="freelance">Freelance</option>
+                </select>
+              </label>
+
+              <label>
+                <span className="mb-1.5 block text-xs font-medium text-stone-500">Date d&apos;envoi</span>
+                <select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none focus:border-orange-300"
+                >
+                  <option value="all">Toutes</option>
+                  <option value="today">Aujourd&apos;hui</option>
+                  <option value="7d">7 derniers jours</option>
+                  <option value="30d">30 derniers jours</option>
+                  <option value="custom">Personnalisé</option>
+                </select>
+              </label>
+
+              <label>
+                <span className="mb-1.5 block text-xs font-medium text-stone-500">Tri</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none focus:border-orange-300"
+                >
+                  <option value="recent">Plus récent</option>
+                  <option value="oldest">Plus ancien</option>
+                  <option value="company_az">A→Z entreprise</option>
+                </select>
+              </label>
+            </div>
+
+            {dateFilter === "custom" && (
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label>
+                  <span className="mb-1.5 block text-xs font-medium text-stone-500">Du</span>
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none focus:border-orange-300"
+                  />
+                </label>
+                <label>
+                  <span className="mb-1.5 block text-xs font-medium text-stone-500">Au</span>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none focus:border-orange-300"
+                  />
+                </label>
+              </div>
+            )}
+          </section>
 
           {loadError && (
             <div
@@ -152,7 +273,7 @@ export default function KanbanPage() {
           )}
 
           {!loadError &&
-            applications.length === 0 &&
+            displayedApplications.length === 0 &&
             countOtherPipeline > 0 && (
               <div className="rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50/90 to-orange-50/50 px-5 py-4 text-sm text-amber-950 shadow-sm">
                 Tu as{" "}
@@ -166,7 +287,7 @@ export default function KanbanPage() {
             )}
 
           {!loadError &&
-            applications.length === 0 &&
+            displayedApplications.length === 0 &&
             countOtherPipeline === 0 && (
               <div className="rounded-2xl border border-stone-200/80 bg-white/80 px-5 py-4 text-sm text-stone-600 shadow-sm backdrop-blur-sm">
                 Les candidatures apparaissent ici une fois{" "}
@@ -185,7 +306,7 @@ export default function KanbanPage() {
             </div>
           ) : (
             <KanbanBoardEditorial
-              applications={applications}
+              applications={displayedApplications}
               onStatusChange={handleStatusChange}
             />
           )}

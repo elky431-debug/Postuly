@@ -10,7 +10,6 @@ import {
   BookOpen,
   Calendar,
   CheckCircle,
-  Plus,
   RefreshCw,
   Search,
   Send,
@@ -232,7 +231,7 @@ export function DashboardPage() {
   const chartSum = chartValues.reduce((a, b) => a + b, 0);
 
   const quickActions: QuickActionItem[] = [
-    { Icon: RefreshCw, label: "Activer relances auto", sub: "J+5 si pas de réponse", href: "/relances" },
+    { Icon: RefreshCw, label: "Activer relances auto", sub: "J+5 si pas de réponse", href: "/relance" },
     { Icon: Wand2, label: "Générer une lettre IA", sub: "Depuis ta sélection d’entreprises", href: "/dashboard/entreprises" },
     { Icon: Search, label: "Chercher des offres", sub: "France Travail + SIRENE", href: "/offres" },
     { Icon: BarChart3, label: "Voir rapport hebdo", sub: "Stats de la semaine", href: "/dashboard" },
@@ -250,58 +249,48 @@ export function DashboardPage() {
 
   return (
     <motion.div
-      className="mx-auto max-w-[1600px] px-5 pb-20 pt-10 sm:px-8 lg:px-12"
+      className="mx-auto max-w-[1520px] px-6 pb-20 pt-8 sm:px-8 lg:px-10"
       variants={container}
       initial="hidden"
       animate="show"
     >
       <motion.header
         variants={item}
-        className="mb-12 flex flex-col gap-6 border-b border-stone-200/80 pb-10 sm:flex-row sm:items-end sm:justify-between"
+        className="mb-8 flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white px-6 py-5 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.45)] sm:flex-row sm:items-end sm:justify-between"
       >
-        <div className="space-y-3">
-          <h1 className="text-3xl font-bold leading-[1.15] tracking-tight text-stone-900 sm:text-[2rem]">
-            Bonjour{userName ? `, ${userName}` : ""}{" "}
-            <span className="inline-block origin-bottom-right" aria-hidden>
-              👋
-            </span>
+        <div className="space-y-1">
+          <h1 className="text-[30px] font-semibold tracking-tight text-stone-900">
+            Bonjour{userName ? `, ${userName}` : ""}
           </h1>
-          <p className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-stone-600">
-            <span className="rounded-full bg-white px-3 py-1 font-medium text-stone-600 shadow-sm ring-1 ring-stone-200/80">
-              {todayPretty}
-            </span>
-            <span className="text-stone-400">·</span>
-            <span>
-              {sentThisWeek} candidature{sentThisWeek !== 1 ? "s" : ""} envoyée
-              {sentThisWeek !== 1 ? "s" : ""} cette semaine
-            </span>
+          <p className="text-sm text-stone-500">
+            {todayPretty} · {sentThisWeek} candidature{sentThisWeek !== 1 ? "s" : ""} envoyée
+            {sentThisWeek !== 1 ? "s" : ""} cette semaine
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-3">
           <Link
             href="#"
-            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-[13px] font-medium text-stone-600 shadow-sm transition hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900"
+            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-[13px] font-medium text-stone-700 transition hover:border-stone-300 hover:bg-stone-50"
           >
             <BookOpen className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
             Guide de démarrage
           </Link>
           <Link
             href="/dashboard/selections"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-orange-500 to-orange-600 px-5 py-2.5 text-[13px] font-semibold text-white shadow-lg shadow-orange-500/30 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/35"
+            className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(249,115,22,0.75)] transition hover:bg-orange-600"
           >
-            <BookmarkCheck className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+            <BookmarkCheck className="h-4 w-4" strokeWidth={2} aria-hidden />
             Ma sélection
           </Link>
         </div>
       </motion.header>
 
-      <motion.section variants={item} className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
+      <motion.section variants={item} className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           label="Total candidatures"
           countTarget={stats.total}
           accent={ORANGE}
           Icon={Send}
-          sparkSeed={`total-${stats.total}`}
           hasTrendData={stats.total > 0}
         />
         <StatCard
@@ -309,7 +298,6 @@ export function DashboardPage() {
           countTarget={stats.sent}
           accent={GREEN}
           Icon={CheckCircle}
-          sparkSeed={`sent-${stats.sent}`}
           hasTrendData={stats.sent > 0}
         />
         <StatCard
@@ -318,7 +306,6 @@ export function DashboardPage() {
           isPercent
           accent={BLUE}
           Icon={TrendingUp}
-          sparkSeed={`rate-${responseRate}`}
           hasTrendData={stats.sent > 0}
         />
         <StatCard
@@ -326,12 +313,11 @@ export function DashboardPage() {
           countTarget={stats.interviews}
           accent={VIOLET}
           Icon={Calendar}
-          sparkSeed={`iv-${stats.interviews}`}
           hasTrendData={stats.interviews > 0}
         />
       </motion.section>
 
-      <motion.section variants={item} className="mb-10 grid grid-cols-1 gap-5 lg:grid-cols-5 lg:gap-6">
+      <motion.section variants={item} className="mb-8 grid grid-cols-1 gap-5 lg:grid-cols-5">
         <div className="lg:col-span-3">
           <QuickStart steps={steps} done={done} doneCount={done.filter(Boolean).length} />
         </div>
@@ -340,27 +326,27 @@ export function DashboardPage() {
         </div>
       </motion.section>
 
-      <motion.section variants={item} className="mb-10 grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <motion.section variants={item} className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
         <CVDropZone profile={profile} uploading={uploading} onFileChange={handleCvUpload} />
 
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/40 px-5 py-4">
+        <div className="flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white">
+          <div className="flex items-center justify-between border-b border-stone-100 px-5 py-4">
             <div>
-              <h2 className="text-sm font-bold text-stone-900">Volume d&apos;envois</h2>
+              <h2 className="text-sm font-semibold text-stone-900">Volume d&apos;envois</h2>
               <p className="mt-0.5 text-[11px] text-stone-500">Candidatures sur la période</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex rounded-lg bg-stone-200/60 p-0.5 ring-1 ring-stone-200/80">
+              <div className="flex rounded-md bg-stone-100 p-0.5">
                 {(["7j", "30j"] as const).map((p) => (
                   <button
                     key={p}
                     type="button"
                     onClick={() => setChartPeriod(p)}
                     className={cn(
-                      "rounded-md px-3 py-1.5 text-xs font-semibold transition-all",
+                      "rounded px-3 py-1 text-xs font-medium transition-colors",
                       chartPeriod === p
-                        ? "bg-white text-orange-600 shadow-sm ring-1 ring-stone-200/90"
-                        : "text-stone-500 hover:text-stone-800"
+                        ? "bg-white text-stone-900 shadow-sm"
+                        : "text-stone-500 hover:text-stone-700"
                     )}
                   >
                     {p}
@@ -389,10 +375,10 @@ export function DashboardPage() {
             />
           </div>
 
-          <div className="border-t border-stone-100 bg-stone-50/30 px-5 py-4">
-            <Link
+          <div className="border-t border-stone-100 px-5 py-4">
+              <Link
               href="/dashboard/selections"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-orange-500 to-orange-600 py-3.5 text-sm font-semibold text-white shadow-md shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500 py-3 text-sm font-medium text-white transition hover:bg-orange-600"
             >
               <BookmarkCheck className="h-4 w-4" strokeWidth={2.5} aria-hidden />
               Ouvrir Ma sélection

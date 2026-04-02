@@ -17,7 +17,7 @@ import Link from "next/link";
 import { CONTRACT_LABELS } from "@/lib/utils";
 import type { Application, ApplicationStatus } from "@/lib/types";
 
-/** Colonnes Kanban — teintes Postuly (orange / or / corail). */
+/** Colonnes Kanban — style sobre blanc/orange. */
 const KANBAN_PIPELINE_COLUMNS: {
   id: ApplicationStatus;
   label: string;
@@ -31,24 +31,8 @@ const KANBAN_PIPELINE_COLUMNS: {
     label: "Envoyé",
     color: "#FE6A2E",
     ring: "rgba(254, 106, 46, 0.35)",
-    columnBg: "linear-gradient(180deg, #FFFBF7 0%, #FFF5EB 100%)",
-    columnBgOver: "linear-gradient(180deg, #FFF7ED 0%, #FFEDD5 100%)",
-  },
-  {
-    id: "followed_up",
-    label: "Relancé",
-    color: "#EA580C",
-    ring: "rgba(234, 88, 12, 0.3)",
-    columnBg: "linear-gradient(180deg, #FFFAF5 0%, #FFF1E3 100%)",
-    columnBgOver: "linear-gradient(180deg, #FFF4E6 0%, #FFE4CC 100%)",
-  },
-  {
-    id: "rejected",
-    label: "Refusé",
-    color: "#E11D48",
-    ring: "rgba(225, 29, 72, 0.28)",
-    columnBg: "linear-gradient(180deg, #FFFBFC 0%, #FFF1F2 100%)",
-    columnBgOver: "linear-gradient(180deg, #FFF1F3 0%, #FFE4E9 100%)",
+    columnBg: "#FFFFFF",
+    columnBgOver: "#FFF7ED",
   },
 ];
 
@@ -102,11 +86,9 @@ function PreviewDrawer({
         className="fixed inset-0 z-40 cursor-default border-0 bg-gradient-to-br from-stone-900/35 via-stone-900/25 to-[#431407]/20 p-0 backdrop-blur-[2px]"
         onClick={onClose}
       />
-      <aside
-        className="fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-[520px] flex-col overflow-y-auto bg-[#FDFBF8] shadow-[-8px_0_40px_-8px_rgba(254,106,46,0.18)]"
-      >
-        <header className="sticky top-0 z-[1] border-b border-orange-100/90 bg-gradient-to-br from-white via-[#FFFBF7] to-[#FFF5EB] px-6 py-5">
-          <div className="h-0.5 w-16 rounded-full bg-gradient-to-r from-[#FE6A2E] to-[#FFB347] mb-4" aria-hidden />
+      <aside className="fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-[520px] flex-col overflow-y-auto bg-white shadow-[-8px_0_40px_-8px_rgba(15,23,42,0.18)]">
+        <header className="sticky top-0 z-[1] border-b border-stone-200 bg-white px-6 py-5">
+          <div className="mb-4 h-0.5 w-16 rounded-full bg-orange-500" aria-hidden />
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="text-lg font-semibold leading-snug text-stone-900">
@@ -119,7 +101,7 @@ function PreviewDrawer({
             <button
               type="button"
               onClick={onClose}
-              className="shrink-0 cursor-pointer rounded-xl border border-stone-200/80 bg-white/90 px-3 py-2 text-lg leading-none text-stone-500 shadow-sm transition hover:border-orange-200 hover:bg-orange-50/80 hover:text-[#FE6A2E]"
+              className="shrink-0 cursor-pointer rounded-xl border border-stone-200 bg-white px-3 py-2 text-lg leading-none text-stone-500 transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#FE6A2E]"
             >
               ×
             </button>
@@ -161,7 +143,7 @@ function PreviewDrawer({
             <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#FE6A2E]">
               Destinataire RH
             </div>
-            <div className="rounded-xl border border-orange-100/80 bg-gradient-to-r from-[#FFF7ED] to-white px-4 py-3 shadow-inner">
+            <div className="rounded-xl border border-orange-100 bg-orange-50/40 px-4 py-3">
               {app.contact?.email ? (
                 <a
                   href={`mailto:${app.contact.email}`}
@@ -179,7 +161,7 @@ function PreviewDrawer({
             <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#FE6A2E]">
               Objet de l&apos;email
             </div>
-            <div className="rounded-xl border border-orange-100/60 bg-gradient-to-r from-orange-50/90 to-amber-50/50 px-4 py-3 text-[13px] font-medium text-stone-800">
+            <div className="rounded-xl border border-orange-100 bg-orange-50/60 px-4 py-3 text-[13px] font-medium text-stone-800">
               {emailSubjectPreview(app)}
             </div>
           </section>
@@ -221,10 +203,10 @@ function ApplicationCard({
 }) {
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border border-orange-100/90 bg-white px-4 py-3.5 transition-all ${
+      className={`group relative overflow-hidden rounded-2xl border border-stone-200 bg-white px-4 py-3.5 transition-all ${
         isDragging
           ? "opacity-40 shadow-none"
-          : "shadow-[0_2px_12px_-2px_rgba(254,106,46,0.12),0_1px_2px_rgba(0,0,0,0.04)] hover:border-orange-200/90 hover:shadow-[0_8px_24px_-6px_rgba(254,106,46,0.18)]"
+          : "shadow-[0_12px_24px_-22px_rgba(15,23,42,0.5)] hover:-translate-y-0.5 hover:border-orange-200"
       }`}
     >
       <div
@@ -258,7 +240,7 @@ function ApplicationCard({
                 e.stopPropagation();
                 onPreview();
               }}
-              className="cursor-pointer rounded-lg bg-gradient-to-r from-[#FE6A2E] to-[#FFB347] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-[1.05]"
+              className="cursor-pointer rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-600"
             >
               Voir →
             </button>
@@ -316,22 +298,22 @@ function Column({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
-    <div className="min-w-0 flex-1">
-      <div className="mb-3 flex items-center gap-2.5 rounded-2xl border border-stone-200/60 bg-white/90 px-3 py-2.5 shadow-sm backdrop-blur-sm">
+    <div className="min-w-[320px] flex-1">
+      <div className="mb-3 flex items-center gap-2.5 rounded-2xl border border-stone-200 bg-white px-3 py-2.5">
         <div
           className="h-3 w-3 shrink-0 rounded-full shadow-sm ring-2"
           style={{ background: color, boxShadow: `0 0 0 3px ${ring}` }}
         />
         <span className="text-sm font-semibold text-stone-800">{label}</span>
         <span
-          className="ml-auto min-w-[1.75rem] rounded-full bg-gradient-to-r from-stone-100 to-stone-50 px-2 py-0.5 text-center text-xs font-bold tabular-nums text-stone-600 ring-1 ring-stone-200/80"
+          className="ml-auto min-w-[1.75rem] rounded-full bg-stone-100 px-2 py-0.5 text-center text-xs font-bold tabular-nums text-stone-600 ring-1 ring-stone-200"
         >
           {apps.length}
         </span>
       </div>
       <div
         ref={setNodeRef}
-        className="flex min-h-[420px] flex-col gap-2.5 rounded-2xl border-2 border-dashed p-3 transition-all duration-200"
+        className="flex min-h-[520px] flex-col gap-2.5 rounded-2xl border border-stone-200 p-3 transition-all duration-200"
         style={{
           borderColor: isOver ? color : "rgba(231, 229, 228, 0.9)",
           background: isOver ? columnBgOver : columnBg,
@@ -419,7 +401,7 @@ export function KanbanBoardEditorial({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-5">
+        <div className="flex gap-4 overflow-x-auto pb-2">
           {KANBAN_PIPELINE_COLUMNS.map((col) => (
             <Column
               key={col.id}
