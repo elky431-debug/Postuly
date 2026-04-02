@@ -5,10 +5,17 @@ import {
   BookmarkCheck,
   BriefcaseBusiness,
   Building2,
+  Calendar,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   ExternalLink,
+  GraduationCap,
+  Globe,
   Loader2,
   MapPin,
+  Monitor,
+  Phone,
   Search,
   Sparkles,
   Users,
@@ -174,28 +181,75 @@ function ApplyModal({ item, romeLabel, token, onClose, onApplied, romeCode }: Ap
       <div className="relative z-10 flex w-full max-w-lg flex-col rounded-2xl bg-white shadow-[0_24px_64px_rgba(0,0,0,0.18)]">
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 border-b border-stone-100 px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-[14px] font-bold text-orange-600">
-              {item.name[0]?.toUpperCase() ?? "?"}
+        <div className="border-b border-stone-100 px-6 py-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-[14px] font-bold text-orange-600">
+                {item.name[0]?.toUpperCase() ?? "?"}
+              </div>
+              <div>
+                <p className="text-[15px] font-bold text-stone-900">{item.name}</p>
+                {(item.city || item.address) && (
+                  <p className="flex items-center gap-1 text-[11px] text-stone-400">
+                    <MapPin className="h-3 w-3" strokeWidth={2} />
+                    {item.city || item.address}
+                  </p>
+                )}
+              </div>
             </div>
-            <div>
-              <p className="text-[15px] font-bold text-stone-900">{item.name}</p>
-              {item.address && (
-                <p className="flex items-center gap-1 text-[11px] text-stone-400">
-                  <MapPin className="h-3 w-3" strokeWidth={2} />
-                  {item.address}
-                </p>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+            >
+              <X className="h-4 w-4" strokeWidth={2} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
-          >
-            <X className="h-4 w-4" strokeWidth={2} />
-          </button>
+
+          {/* Fiche entreprise */}
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {item.nafText && (
+              <div className="flex items-start gap-2 rounded-xl bg-stone-50 px-3 py-2.5">
+                <Building2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-400" strokeWidth={2} />
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-stone-400">Secteur</p>
+                  <p className="text-[11px] font-medium text-stone-700">{item.nafText}</p>
+                </div>
+              </div>
+            )}
+            {item.size && (
+              <div className="flex items-start gap-2 rounded-xl bg-stone-50 px-3 py-2.5">
+                <Users className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-400" strokeWidth={2} />
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-stone-400">Taille</p>
+                  <p className="text-[11px] font-medium text-stone-700">{item.size}</p>
+                </div>
+              </div>
+            )}
+            {item.phone && (
+              <div className="flex items-start gap-2 rounded-xl bg-stone-50 px-3 py-2.5">
+                <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-400" strokeWidth={2} />
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-stone-400">Téléphone</p>
+                  <p className="text-[11px] font-medium text-stone-700">{item.phone}</p>
+                </div>
+              </div>
+            )}
+            {item.website && (
+              <a
+                href={item.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-2 rounded-xl bg-stone-50 px-3 py-2.5 transition hover:bg-orange-50"
+              >
+                <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-400" strokeWidth={2} />
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-stone-400">Site web</p>
+                  <p className="truncate text-[11px] font-medium text-orange-500">Visiter →</p>
+                </div>
+              </a>
+            )}
+          </div>
         </div>
 
         {/* Body */}
@@ -353,8 +407,6 @@ function RecruteurCard({
   item:        LbaRecruteur & { already_applied: boolean };
   onOpenModal: (item: LbaRecruteur & { already_applied: boolean }) => void;
 }) {
-  const externalUrl = item.website || item.applyUrl || null;
-
   return (
     <div className={cn(
       "group flex flex-col rounded-2xl bg-white p-5 shadow-[0_2px_8px_rgba(0,0,0,0.05)] ring-1 transition-all",
@@ -370,7 +422,7 @@ function RecruteurCard({
         <div className="flex-1 min-w-0">
           <p className="truncate text-[14px] font-bold text-stone-900">{item.name}</p>
           {item.nafText && (
-            <p className="truncate text-[11px] text-stone-400">{item.nafText}</p>
+            <p className="truncate text-[11px] text-stone-500">{item.nafText}</p>
           )}
         </div>
         <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-500 ring-1 ring-orange-200/60">
@@ -378,12 +430,18 @@ function RecruteurCard({
         </span>
       </div>
 
-      {/* Infos */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-        {item.address && (
+      {/* Infos ligne */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        {(item.city || item.address) && (
           <span className="flex items-center gap-1 text-[11px] text-stone-400">
             <MapPin className="h-3 w-3" strokeWidth={2} />
-            {item.address}
+            {item.city || item.address}
+          </span>
+        )}
+        {item.size && (
+          <span className="flex items-center gap-1 text-[11px] text-stone-400">
+            <Users className="h-3 w-3" strokeWidth={2} />
+            {item.size}
           </span>
         )}
         {item.naf && (
@@ -391,10 +449,18 @@ function RecruteurCard({
             NAF {item.naf}
           </span>
         )}
-        {item.size && (
-          <span className="text-[11px] text-stone-400">{item.size}</span>
-        )}
       </div>
+
+      {/* Contact */}
+      {item.phone && (
+        <a
+          href={`tel:${item.phone}`}
+          className="mt-2 flex items-center gap-1.5 text-[11px] text-stone-400 transition hover:text-orange-500"
+        >
+          <Phone className="h-3 w-3" strokeWidth={2} />
+          {item.phone}
+        </a>
+      )}
 
       {/* Score */}
       {item.score > 0 && (
@@ -419,19 +485,33 @@ function RecruteurCard({
             Postuler <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
         )}
-        {externalUrl && (
+        {item.website && (
           <a
-            href={externalUrl}
+            href={item.website}
             target="_blank"
             rel="noopener noreferrer"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-400 transition hover:bg-orange-50 hover:text-orange-500"
+            title="Site web"
           >
-            <ExternalLink className="h-4 w-4" strokeWidth={2} />
+            <Globe className="h-4 w-4" strokeWidth={2} />
           </a>
         )}
       </div>
     </div>
   );
+}
+
+const REMOTE_LABEL: Record<string, string> = {
+  remote:  "Full remote",
+  hybrid:  "Hybride",
+  onsite:  "",
+};
+
+function formatDate(iso: string): string {
+  if (!iso) return "";
+  try {
+    return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
+  } catch { return iso; }
 }
 
 function OffreCard({
@@ -442,10 +522,12 @@ function OffreCard({
   token: string;
   onApplied: (id: string) => void;
 }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
-  const [applied, setApplied] = useState(item.already_applied ?? false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+  const [applied, setApplied]   = useState(item.already_applied ?? false);
+  const [expanded, setExpanded] = useState(false);
   const isPartner = item.type === "offre_partenaire";
+  const remoteLabel = REMOTE_LABEL[item.contractRemote] ?? "";
 
   async function handleApply() {
     if (applied || loading || isPartner) return;
@@ -462,7 +544,7 @@ function OffreCard({
           siret:       item.siret || undefined,
           companyName: item.companyName,
           romeCode,
-          city:        item.address || undefined,
+          city:        item.city || item.address || undefined,
         }),
       });
       if (res.status === 409) { setApplied(true); onApplied(item.id); return; }
@@ -484,13 +566,14 @@ function OffreCard({
       "flex flex-col rounded-2xl bg-white p-5 shadow-[0_2px_8px_rgba(0,0,0,0.05)] ring-1 transition-all",
       applied ? "ring-orange-200" : "ring-stone-100 hover:ring-orange-200 hover:shadow-[0_4px_20px_rgba(249,115,22,0.10)]"
     )}>
+      {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-100">
           <BriefcaseBusiness className="h-5 w-5 text-orange-500" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="truncate text-[14px] font-bold text-stone-900">{item.title}</p>
-          <p className="truncate text-[11px] text-stone-500">{item.companyName}</p>
+          <p className="text-[14px] font-bold leading-snug text-stone-900">{item.title}</p>
+          <p className="truncate text-[11px] font-medium text-stone-500">{item.companyName}</p>
         </div>
         {isPartner && (
           <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-500">
@@ -499,28 +582,84 @@ function OffreCard({
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-        {item.address && (
-          <span className="flex items-center gap-1 text-[11px] text-stone-400">
-            <MapPin className="h-3 w-3" strokeWidth={2} />
-            {item.address}
+      {/* Badges */}
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {item.contractType && (
+          <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-semibold text-orange-600 ring-1 ring-orange-200/60">
+            {item.contractType}
           </span>
         )}
         {item.contractDuration != null && (
-          <span className="text-[11px] text-stone-400">{item.contractDuration} mois</span>
+          <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[10px] font-semibold text-stone-500">
+            {item.contractDuration} mois
+          </span>
+        )}
+        {remoteLabel && (
+          <span className="flex items-center gap-1 rounded-full bg-stone-100 px-2.5 py-1 text-[10px] font-semibold text-stone-500">
+            <Monitor className="h-2.5 w-2.5" strokeWidth={2} />
+            {remoteLabel}
+          </span>
+        )}
+        {item.targetDiploma && (
+          <span className="flex items-center gap-1 rounded-full bg-stone-100 px-2.5 py-1 text-[10px] font-semibold text-stone-500">
+            <GraduationCap className="h-2.5 w-2.5" strokeWidth={2} />
+            {item.targetDiploma}
+          </span>
         )}
       </div>
 
+      {/* Localisation + date */}
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+        {(item.city || item.address) && (
+          <span className="flex items-center gap-1 text-[11px] text-stone-400">
+            <MapPin className="h-3 w-3" strokeWidth={2} />
+            {item.city || item.address}
+          </span>
+        )}
+        {item.startDate && (
+          <span className="flex items-center gap-1 text-[11px] text-stone-400">
+            <Calendar className="h-3 w-3" strokeWidth={2} />
+            Dès le {formatDate(item.startDate)}
+          </span>
+        )}
+      </div>
+
+      {/* Description expandable */}
       {item.description && (
-        <p className="mt-2 line-clamp-2 text-[11.5px] leading-relaxed text-stone-400">
-          {item.description}
-        </p>
+        <div className="mt-3">
+          <p className={cn("text-[11.5px] leading-relaxed text-stone-400", !expanded && "line-clamp-3")}>
+            {item.description}
+          </p>
+          {item.description.length > 160 && (
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-orange-500 hover:text-orange-600"
+            >
+              {expanded
+                ? <><ChevronUp className="h-3 w-3" strokeWidth={2} /> Réduire</>
+                : <><ChevronDown className="h-3 w-3" strokeWidth={2} /> Voir plus</>}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Compétences recherchées */}
+      {item.desiredSkills.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1">
+          {item.desiredSkills.slice(0, 5).map((s) => (
+            <span key={s} className="rounded bg-stone-50 px-2 py-0.5 text-[10px] font-medium text-stone-500 ring-1 ring-stone-100">
+              {s}
+            </span>
+          ))}
+        </div>
       )}
 
       {error && (
         <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-[11px] text-red-600">{error}</p>
       )}
 
+      {/* Actions */}
       <div className="mt-4 flex items-center gap-2">
         {isPartner ? (
           <a

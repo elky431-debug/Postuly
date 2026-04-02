@@ -52,17 +52,19 @@ function lbaHeaders(): Record<string, string> {
 /** Entreprise sans offre publiée — candidature spontanée */
 export interface LbaRecruteur {
   id:           string;
-  recipientId:  string;  // pour POST /job/v1/apply
+  recipientId:  string;
   siret:        string;
   name:         string;
   address:      string;
+  city:         string;
+  zipCode:      string;
   naf:          string;
   nafText:      string;
   size:         string;
   website:      string;
   phone:        string;
   applyUrl:     string;
-  score:        number;  // probabilité recrutement alternance (0–1 float ou 1–3 stars)
+  score:        number;
   type:         "recruteur_lba";
   already_applied?: boolean;
 }
@@ -70,15 +72,22 @@ export interface LbaRecruteur {
 /** Offre d'emploi en alternance (LBA directe ou France Travail) */
 export interface LbaOffre {
   id:               string;
-  recipientId:      string;  // pour POST /job/v1/apply
-  partnerLabel:     string;  // "offres_emploi_lba" | "France Travail" | ...
+  recipientId:      string;
+  partnerLabel:     string;
   title:            string;
   companyName:      string;
   siret:            string;
   address:          string;
+  city:             string;
+  zipCode:          string;
   contractDuration: number | null;  // mois
+  contractType:     string;         // "Apprentissage" | "Professionnalisation" | …
+  contractRemote:   string;         // "onsite" | "remote" | "hybrid" | ""
+  startDate:        string;         // ISO date ou ""
   url:              string;
   description:      string;
+  desiredSkills:    string[];
+  targetDiploma:    string;         // "BAC+2", "BAC+3", …
   romeCodes:        string[];
   type:             "offre_lba" | "offre_partenaire";
   already_applied?: boolean;
@@ -111,17 +120,21 @@ function mapLocation(loc: Record<string, unknown>): string {
 }
 
 function mapWorkplace(wp: Record<string, unknown>): {
-  name: string; siret: string; address: string; naf: string; nafText: string; size: string; website: string;
+  name: string; siret: string; address: string; city: string; zipCode: string;
+  naf: string; nafText: string; size: string; website: string;
 } {
   const loc  = (wp.location  ?? {}) as Record<string, unknown>;
   const dom  = (wp.domain    ?? {}) as Record<string, unknown>;
   const idfs = (wp.identifier ?? {}) as Record<string, unknown>;
+  const naf  = (dom.naf ?? {}) as Record<string, unknown>;
   return {
     name:    str(wp.name    ?? wp.brand ?? wp.legal_name),
     siret:   str(wp.siret   ?? idfs.siret),
     address: mapLocation(loc),
-    naf:     str(dom.idcc   ?? wp.naf ?? ""),
-    nafText: str(dom.label  ?? dom.naf_text ?? ""),
+    city:    str(loc.city   ?? loc.commune ?? ""),
+    zipCode: str(loc.zip_code ?? loc.zipCode ?? loc.code_postal ?? ""),
+    naf:     str(naf.code   ?? dom.idcc ?? wp.naf ?? ""),
+    nafText: str(naf.label  ?? dom.label ?? dom.naf_text ?? ""),
     size:    str(wp.size),
     website: str(wp.website),
   };
@@ -165,13 +178,13 @@ export async function searchOpportunites(
     const id    = (item.identifier ?? {}) as Record<string, unknown>;
     const wp    = (item.workplace   ?? {}) as Record<string, unknown>;
     const apply = (item.apply       ?? {}) as Record<string, unknown>;
-    const mapped = mapWorkplace(wp);
+    const mapped   = mapWorkplace(wp);
     const rawScore = item.establishment_score ?? item.score ?? id.stars ?? id.establishment_score ?? 0;
     return {
       id:          str(id.id),
       recipientId: str(apply.recipient_id),
       ...mapped,
-      phone:    str(apply.phone),
+      phone:    str(apply.phone ?? (apply.contact as Record<string,unknown>)?.phone ?? ""),
       applyUrl: str(apply.url),
       score:    Number(rawScore),
       type:     "recruteur_lba" as const,
@@ -185,8 +198,13 @@ export async function searchOpportunites(
     const apply    = (item.apply       ?? {}) as Record<string, unknown>;
     const offer    = (item.offer       ?? {}) as Record<string, unknown>;
     const contract = (item.contract    ?? {}) as Record<string, unknown>;
-    const mapped   = mapWorkplace(wp);
+    const mapped       = mapWorkplace(wp);
     const partnerLabel = str(id.partner_label);
+    const pub          = (offer.publication ?? {}) as Record<string, unknown>;
+    const diploma      = (offer.target_diploma ?? {}) as Record<string, unknown>;
+    const skills       = Array.isArray(offer.desired_skills)
+      ? (offer.desired_skills as string[])
+      : [];
     return {
       id:               str(id.id ?? id.partner_job_id),
       recipientId:      str(apply.recipient_id),
@@ -195,9 +213,16 @@ export async function searchOpportunites(
       companyName:      mapped.name,
       siret:            mapped.siret,
       address:          mapped.address,
+      city:             mapped.city,
+      zipCode:          mapped.zipCode,
       contractDuration: contract.duration != null ? Number(contract.duration) : null,
+      contractType:     str(contract.type ?? ""),
+      contractRemote:   str(contract.remote ?? ""),
+      startDate:        str(contract.start ?? pub.creation ?? ""),
       url:              str(apply.url),
       description:      str(offer.description),
+      desiredSkills:    skills,
+      targetDiploma:    str(diploma.label ?? ""),
       romeCodes:        Array.isArray(offer.rome_codes) ? (offer.rome_codes as string[]) : [],
       type:             partnerLabel === "offres_emploi_lba" ? "offre_lba" : "offre_partenaire",
     };
