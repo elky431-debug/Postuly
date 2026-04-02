@@ -152,7 +152,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className={`${GeistSans.className} flex min-h-screen bg-[#F5F5F3]`}>
+    <div className={`${GeistSans.className} flex min-h-screen bg-[#F7F6F3]`}>
       <DashboardSidebar user={user} />
       <div className="flex min-h-screen flex-1 flex-col overflow-hidden">
         <TopBar user={user} />
