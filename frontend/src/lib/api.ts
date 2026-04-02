@@ -19,7 +19,8 @@ function isNextOnlyApiPath(path: string): boolean {
     path.startsWith("/api/entreprises/") ||
     path.startsWith("/api/applications/update-status") ||
     path.startsWith("/api/cv/upload") ||
-    path.startsWith("/api/relance/")
+    path.startsWith("/api/relance/") ||
+    path.startsWith("/api/alternance/")
   );
 }
 

@@ -20,6 +20,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard/profil":           "Profil",
   "/dashboard/parametres":       "Paramètres",
   "/dashboard/abonnement":       "Abonnement",
+  "/dashboard/alternance":       "Alternance",
 };
 
 function getPageTitle(pathname: string): string {

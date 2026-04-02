@@ -12,6 +12,7 @@ import {
   BookmarkCheck,
   UserRound,
   CreditCard,
+  GraduationCap,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const MAIN_NAV = [
   { name: "Entreprises", href: "/dashboard/entreprises",   icon: Building2 },
   { name: "Sélections",  href: "/dashboard/selections",    icon: BookmarkCheck },
   { name: "Mon CV",      href: "/cv",                      icon: FileText },
+  { name: "Alternance",  href: "/dashboard/alternance",    icon: GraduationCap },
 ] as const;
 
 const SECONDARY_NAV = [
@@ -66,11 +68,11 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
         <div
           className={cn(
             "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors",
-            isActive ? "bg-orange-100" : "bg-stone-100/80"
+            isActive ? "bg-orange-200" : "bg-stone-100/80"
           )}
         >
           <Icon
-            className={cn("h-[15px] w-[15px]", isActive ? "text-orange-500" : "text-stone-400")}
+            className={cn("h-[15px] w-[15px]", isActive ? "text-orange-600" : "text-stone-400")}
             strokeWidth={2}
           />
         </div>
