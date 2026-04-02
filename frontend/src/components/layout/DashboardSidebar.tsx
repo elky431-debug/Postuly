@@ -68,7 +68,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
   }
 
   return (
-    <aside className="flex min-h-screen w-[240px] min-w-[240px] flex-col bg-[#0f0f0f]">
+    <aside className="flex min-h-screen w-[220px] min-w-[220px] flex-col bg-[#0f0f0f]">
       {/* ── Logo ─────────────────────────────────────────── */}
       <div className="border-b border-white/[0.05] px-4 py-[18px]">
         <Link

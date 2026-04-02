@@ -158,7 +158,6 @@ function KpiCard({
       <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.1em] text-stone-400">{label}</p>
       <p
         className="mt-1 text-[2rem] font-extrabold leading-none tabular-nums tracking-tight text-stone-900"
-        style={{ fontFamily: "var(--font-syne)" }}
       >
         {value}
       </p>
@@ -253,14 +252,14 @@ export function DashboardPage() {
 
   return (
     <motion.div
-      className="mx-auto max-w-[1440px] px-6 pb-16 pt-7 xl:px-10"
+      className="mx-auto max-w-[1440px] px-8 pb-20 pt-8 xl:px-12"
       variants={container}
       initial="hidden"
       animate="show"
     >
 
       {/* ── Row 1 : KPI cards ────────────────────────────────────────────── */}
-      <motion.div variants={row} className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <motion.div variants={row} className="mb-7 grid grid-cols-2 gap-5 lg:grid-cols-4">
         <KpiCard
           label="Total candidatures" value={stats.total} sub="depuis le début"
           color="#F97316" icon={Send}
@@ -284,7 +283,7 @@ export function DashboardPage() {
       </motion.div>
 
       {/* ── Row 2 : Chart + Sélection card ──────────────────────────────── */}
-      <motion.div variants={row} className="mb-6 grid grid-cols-1 gap-5 xl:grid-cols-3">
+      <motion.div variants={row} className="mb-7 grid grid-cols-1 gap-6 xl:grid-cols-3">
 
         {/* Area chart — 2/3 */}
         <div className="col-span-2 rounded-2xl bg-white shadow-[0_2px_12px_rgba(0,0,0,0.05)] ring-1 ring-stone-100">
@@ -349,7 +348,6 @@ export function DashboardPage() {
 
               <p
                 className="mt-5 text-[3rem] font-extrabold leading-none tabular-nums tracking-tight text-white"
-                style={{ fontFamily: "var(--font-syne)" }}
               >
                 {selection.length}
               </p>
@@ -388,19 +386,19 @@ export function DashboardPage() {
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">Total</p>
-                <p className="mt-1 text-[18px] font-extrabold tabular-nums text-stone-900" style={{ fontFamily: "var(--font-syne)" }}>
+                <p className="mt-1 text-[18px] font-extrabold tabular-nums text-stone-900">
                   {stats.total}
                 </p>
               </div>
               <div className="border-x border-stone-100">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">Réponses</p>
-                <p className="mt-1 text-[18px] font-extrabold tabular-nums text-emerald-600" style={{ fontFamily: "var(--font-syne)" }}>
+                <p className="mt-1 text-[18px] font-extrabold tabular-nums text-emerald-600">
                   {stats.replied}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-400">Entretiens</p>
-                <p className="mt-1 text-[18px] font-extrabold tabular-nums text-blue-600" style={{ fontFamily: "var(--font-syne)" }}>
+                <p className="mt-1 text-[18px] font-extrabold tabular-nums text-blue-600">
                   {stats.interviews}
                 </p>
               </div>
@@ -410,7 +408,7 @@ export function DashboardPage() {
       </motion.div>
 
       {/* ── Row 3 : Activity + Quick start + Donut ──────────────────────── */}
-      <motion.div variants={row} className="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
+      <motion.div variants={row} className="mb-7 grid grid-cols-1 gap-6 lg:grid-cols-3">
 
         {/* Activity — transaction style (SmilePay) */}
         <div className="rounded-2xl bg-white shadow-[0_2px_12px_rgba(0,0,0,0.05)] ring-1 ring-stone-100">
@@ -561,7 +559,7 @@ export function DashboardPage() {
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <p className="text-[20px] font-extrabold leading-none tabular-nums text-stone-900" style={{ fontFamily: "var(--font-syne)" }}>{donutTotal}</p>
+                    <p className="text-[20px] font-extrabold leading-none tabular-nums text-stone-900">{donutTotal}</p>
                     <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-stone-400">total</p>
                   </div>
                 </div>
@@ -604,7 +602,7 @@ export function DashboardPage() {
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-stone-50 ring-1 ring-stone-100">
                     <span
                       className="text-[20px] font-extrabold tabular-nums"
-                      style={{ fontFamily: "var(--font-syne)", color: profile?.cv_score != null ? profile.cv_score >= 70 ? "#16A34A" : profile.cv_score >= 40 ? "#D97706" : "#DC2626" : "#D1D5DB" }}
+                      style={{ color: profile?.cv_score != null ? profile.cv_score >= 70 ? "#16A34A" : profile.cv_score >= 40 ? "#D97706" : "#DC2626" : "#D1D5DB" }}
                     >
                       {profile?.cv_score ?? "—"}
                     </span>

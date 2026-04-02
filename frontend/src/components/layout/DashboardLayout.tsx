@@ -52,11 +52,10 @@ function TopBar({ user }: { user: User }) {
   const title = getPageTitle(pathname);
 
   return (
-    <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-stone-200/70 bg-white px-6">
+    <header className="flex h-[64px] shrink-0 items-center justify-between border-b border-stone-200/70 bg-white px-6">
       {/* Page title */}
       <h1
         className="text-[17px] font-bold tracking-[-0.02em] text-stone-900"
-        style={{ fontFamily: "var(--font-syne)" }}
       >
         {title}
       </h1>
@@ -153,7 +152,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className={`${GeistSans.className} flex min-h-screen bg-[#F4F4F2]`}>
+    <div className={`${GeistSans.className} flex min-h-screen bg-[#F5F5F3]`}>
       <DashboardSidebar user={user} />
       <div className="flex min-h-screen flex-1 flex-col overflow-hidden">
         <TopBar user={user} />
