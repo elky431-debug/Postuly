@@ -4,6 +4,7 @@ import { Eye } from "lucide-react";
 import type { EntrepriseSearchResult } from "@/types/entreprise";
 import { ScoreBadge } from "./ScoreBadge";
 import { TaillePill } from "./TaillePill";
+import { CompanyLogo } from "@/components/ui/CompanyLogo";
 import { cn } from "@/lib/utils";
 
 const DOMAINE_MAX = 28;
@@ -48,7 +49,10 @@ export function EntrepriseRow({
         />
       </td>
       <td className="px-3 py-3">
-        <p className="font-semibold text-neutral-900">{row.nom}</p>
+        <div className="flex items-center gap-2.5">
+          <CompanyLogo name={row.nom} size="sm" />
+          <p className="font-semibold text-neutral-900">{row.nom}</p>
+        </div>
       </td>
       <td className="px-3 py-3">
         <ScoreBadge score={row.score} />

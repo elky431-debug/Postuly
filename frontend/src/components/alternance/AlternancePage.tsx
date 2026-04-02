@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BookmarkCheck,
-  BriefcaseBusiness,
   Building2,
   Calendar,
   ChevronDown,
@@ -11,7 +10,6 @@ import {
   ChevronUp,
   ExternalLink,
   GraduationCap,
-  Globe,
   Loader2,
   MapPin,
   Monitor,
@@ -27,6 +25,7 @@ import {
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { CompanyLogo } from "@/components/ui/CompanyLogo";
 import type { LbaOffre, LbaRecruteur } from "@/lib/lba";
 
 const RADIUS_OPTIONS = [10, 20, 30, 50, 100] as const;
@@ -184,9 +183,7 @@ function ApplyModal({ item, romeLabel, token, onClose, onApplied, romeCode }: Ap
         <div className="border-b border-stone-100 px-6 py-5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-[14px] font-bold text-orange-600">
-                {item.name[0]?.toUpperCase() ?? "?"}
-              </div>
+              <CompanyLogo name={item.name} website={item.website || undefined} size="md" />
               <div>
                 <p className="text-[15px] font-bold text-stone-900">{item.name}</p>
                 {(item.city || item.address) && (
@@ -242,7 +239,7 @@ function ApplyModal({ item, romeLabel, token, onClose, onApplied, romeCode }: Ap
                 rel="noopener noreferrer"
                 className="flex items-start gap-2 rounded-xl bg-stone-50 px-3 py-2.5 transition hover:bg-orange-50"
               >
-                <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-400" strokeWidth={2} />
+                <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-400" strokeWidth={2} />
                 <div>
                   <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-stone-400">Site web</p>
                   <p className="truncate text-[11px] font-medium text-orange-500">Visiter →</p>
@@ -416,9 +413,7 @@ function RecruteurCard({
     )}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-[15px] font-bold text-orange-600">
-          {item.name[0]?.toUpperCase() ?? "?"}
-        </div>
+        <CompanyLogo name={item.name} website={item.website || undefined} size="md" />
         <div className="flex-1 min-w-0">
           <p className="truncate text-[14px] font-bold text-stone-900">{item.name}</p>
           {item.nafText && (
@@ -485,15 +480,15 @@ function RecruteurCard({
             Postuler <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
         )}
-        {item.website && (
+        {(item.website || item.applyUrl) && (
           <a
-            href={item.website}
+            href={item.website || item.applyUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-400 transition hover:bg-orange-50 hover:text-orange-500"
-            title="Site web"
+            title="Voir la fiche officielle"
           >
-            <Globe className="h-4 w-4" strokeWidth={2} />
+            <ExternalLink className="h-4 w-4" strokeWidth={2} />
           </a>
         )}
       </div>
@@ -568,9 +563,7 @@ function OffreCard({
     )}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-100">
-          <BriefcaseBusiness className="h-5 w-5 text-orange-500" strokeWidth={2} />
-        </div>
+        <CompanyLogo name={item.companyName} size="md" />
         <div className="flex-1 min-w-0">
           <p className="text-[14px] font-bold leading-snug text-stone-900">{item.title}</p>
           <p className="truncate text-[11px] font-medium text-stone-500">{item.companyName}</p>
