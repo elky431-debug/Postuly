@@ -21,7 +21,11 @@ export async function POST(req: NextRequest) {
   try {
     const b = await req.json();
     if (Array.isArray(b.campaignIds)) {
-      campaignIds = [...new Set(b.campaignIds.filter((x: unknown) => typeof x === "string"))];
+      campaignIds = [
+        ...new Set(
+          (b.campaignIds as unknown[]).filter((x: unknown): x is string => typeof x === "string")
+        ),
+      ];
     }
   } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
