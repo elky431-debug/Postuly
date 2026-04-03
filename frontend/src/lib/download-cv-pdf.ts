@@ -1,6 +1,21 @@
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
+/** Téléchargement sans remplacer l’onglet (repli FileSaver de jsPDF sur Safari). */
+function triggerPdfDownload(pdf: jsPDF, fileName: string): void {
+  const blob = pdf.output("blob");
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.rel = "noopener";
+  a.style.cssText = "position:fixed;left:-9999px;top:0;";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 /**
  * Clone le nœud hors écran (sans transform parent / oklab hérités) puis capture pour éviter les erreurs
  * html2canvas + Safari (oklab) et les échelles d’aperçu.
@@ -58,7 +73,8 @@ export async function downloadElementAsA4Pdf(
     const x = marginMm + (innerW - drawW) / 2;
     const y = marginMm + (innerH - drawH) / 2;
     pdf.addImage(imgData, "JPEG", x, y, drawW, drawH);
-    pdf.save(fileName);
+    // Évite pdf.save() / FileSaver : sur certains Safari, repli = navigation (onglet / 404 perçue).
+    triggerPdfDownload(pdf, fileName);
   } finally {
     wrapper.remove();
   }

@@ -211,11 +211,12 @@ export function CreateCvFlow() {
 
         <p className="mb-3 text-center text-sm font-medium text-stone-600">Aperçu de votre CV</p>
         <div
-          className="mx-auto rounded-xl"
+          className="mx-auto overflow-hidden rounded-xl"
           style={{
             background: "#f0f0f0",
-            padding: 32,
+            padding: "clamp(16px, 4vw, 32px)",
             borderRadius: 12,
+            overscrollBehavior: "contain",
           }}
         >
           <CvA4PreviewShell>

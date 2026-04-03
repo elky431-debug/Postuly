@@ -1,0 +1,9 @@
+# Next.js dans frontend/ : obligatoire pour que Netlify détecte le framework (pas « 0 frameworks »).
+# Ne pas utiliser publish = dist ni /* → index.html : ce n’est pas une SPA Vite, l’App Router + API casseraient.
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

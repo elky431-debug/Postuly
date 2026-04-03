@@ -39,7 +39,7 @@ export function CvPreviewModernDark({
   return (
     <div
       {...(printAreaId ? { id: printAreaId } : {})}
-      className={`flex w-[794px] shrink-0 flex-row items-stretch overflow-visible rounded-xl border border-solid shadow-lg ${className}`}
+      className={`flex h-fit w-[794px] shrink-0 flex-row items-stretch overflow-hidden rounded-sm border border-solid shadow-lg ${className}`}
       style={{
         fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         borderColor: "#e5e5e5",

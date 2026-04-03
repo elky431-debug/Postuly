@@ -1,10 +1,14 @@
 import path from "path";
 import type { NextConfig } from "next";
 
-/** Cible du proxy pour les routes /api (évite CORS Safari → :8000 en local). */
+/**
+ * Proxy /api → FastAPI en local uniquement (ou si BACKEND_PROXY_URL est défini en prod).
+ * Sur Netlify sans BACKEND_PROXY_URL, ne pas réécrire vers 127.0.0.1 (cassait les routes).
+ */
+const backendProxyExplicit = process.env.BACKEND_PROXY_URL?.replace(/\/$/, "") ?? "";
 const backendProxy =
-  process.env.BACKEND_PROXY_URL?.replace(/\/$/, "") ||
-  "http://127.0.0.1:8000";
+  backendProxyExplicit ||
+  (process.env.NODE_ENV === "development" ? "http://127.0.0.1:8000" : "");
 
 const nextConfig: NextConfig = {
   /* Monorepo : évite l’avertissement « multiple lockfiles » (racine + frontend). */
@@ -17,6 +21,7 @@ const nextConfig: NextConfig = {
    * avant les route handlers API → le proxy global écrasait nos routes Next.
    */
   async rewrites() {
+    if (!backendProxy) return [];
     return {
       fallback: [
         {
