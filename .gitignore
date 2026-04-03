@@ -6,7 +6,8 @@ dist/
 build/
 .venv/
 venv/
-env/
+# Dossier venv Python à la racine uniquement (pas frontend/src/components/env/)
+/env/
 
 # Node
 node_modules/

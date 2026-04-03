@@ -1,12 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase";
+import { SupabaseConfigMissing } from "@/components/env/SupabaseConfigMissing";
+import { createClient, isSupabaseBrowserConfigured } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PostulyWordmark } from "@/components/brand/PostulyLogo";
+
+const SIGNUP_TIMEOUT_MS = 25_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(message)), ms);
+    promise
+      .then((v) => {
+        clearTimeout(t);
+        resolve(v);
+      })
+      .catch((err: unknown) => {
+        clearTimeout(t);
+        reject(err instanceof Error ? err : new Error(String(err)));
+      });
+  });
+}
 
 export default function SignUpPage() {
   const [fullName, setFullName] = useState("");
@@ -15,7 +32,11 @@ export default function SignUpPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const router = useRouter();
+  if (!isSupabaseBrowserConfigured()) {
+    return (
+      <SupabaseConfigMissing context="L’inscription par email repose sur les clés Supabase du déploiement." />
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,35 +49,57 @@ export default function SignUpPage() {
       return;
     }
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-      },
-    });
+    try {
+      const supabase = createClient();
+      const { error: signUpError } = await withTimeout(
+        supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: { full_name: fullName.trim() },
+          },
+        }),
+        SIGNUP_TIMEOUT_MS,
+        "Délai dépassé : la requête vers Supabase n’a pas abouti. Vérifie ta connexion, un éventuel VPN, ou réessaie. " +
+          "Sur Safari, vérifie aussi Réglages → Confidentialité et décoche « Masquer mon adresse IP » / extensions qui bloquent les requêtes."
+      );
 
-    if (error) {
-      setError(error.message);
+      if (signUpError) {
+        setError(signUpError.message);
+        return;
+      }
+
+      setSuccess(true);
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Impossible de créer le compte. Réessaie dans un instant.";
+      setError(msg);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setSuccess(true);
-    setLoading(false);
   }
 
   async function handleGoogleSignUp() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        scopes:
-          "email profile https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.readonly",
-      },
-    });
+    setError("");
+    try {
+      const supabase = createClient();
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes:
+            "email profile https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.readonly",
+        },
+      });
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de lancer la connexion Google. Vérifie la configuration Supabase."
+      );
+    }
   }
 
   if (success) {
@@ -109,8 +152,12 @@ export default function SignUpPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
+          {error ? (
+            <p className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>
+          ) : null}
           <button
-            onClick={handleGoogleSignUp}
+            type="button"
+            onClick={() => void handleGoogleSignUp()}
             className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors mb-6"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -171,12 +218,6 @@ export default function SignUpPage() {
               required
               minLength={6}
             />
-
-            {error && (
-              <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-                {error}
-              </p>
-            )}
 
             <Button type="submit" className="w-full" loading={loading}>
               Créer mon compte

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase";
+import { SupabaseConfigMissing } from "@/components/env/SupabaseConfigMissing";
+import { createClient, isSupabaseBrowserConfigured } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PostulyWordmark } from "@/components/brand/PostulyLogo";
@@ -16,6 +17,12 @@ export default function LoginPage() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetInfo, setResetInfo] = useState("");
   const router = useRouter();
+
+  if (!isSupabaseBrowserConfigured()) {
+    return (
+      <SupabaseConfigMissing context="La page de connexion a besoin des mêmes variables que le reste de l’app." />
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,6 +57,7 @@ export default function LoginPage() {
     }
 
     router.push("/dashboard");
+    setLoading(false);
   }
 
   async function handleForgotPassword() {

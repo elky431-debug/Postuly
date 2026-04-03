@@ -6,7 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { GeistSans } from "geist/font/sans";
 import { Bell, ChevronDown, Search } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase";
+import { SupabaseConfigMissing } from "@/components/env/SupabaseConfigMissing";
+import { createClient, isSupabaseBrowserConfigured } from "@/lib/supabase";
 import { useSelectionStore } from "@/store/selectionStore";
 import { DashboardSidebar } from "./DashboardSidebar";
 
@@ -112,10 +113,12 @@ type DashboardLayoutProps = { children: React.ReactNode };
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
+  const missingSupabase = !isSupabaseBrowserConfigured();
   const [user, setUser] = useState<User | null>(() => dashboardUserCache);
   const [loading, setLoading] = useState(() => !dashboardAuthReady);
 
   useEffect(() => {
+    if (missingSupabase) return;
     const supabase = createClient();
     if (dashboardAuthReady && dashboardUserCache) {
       setUser(dashboardUserCache);
@@ -142,7 +145,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       setUser(session.user);
     });
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, [router, missingSupabase]);
+
+  if (missingSupabase) {
+    return <SupabaseConfigMissing context="Sans cela, le tableau de bord ne peut pas vérifier ta session." />;
+  }
 
   if (loading || !user) {
     return (
