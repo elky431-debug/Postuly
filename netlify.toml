@@ -2,11 +2,12 @@
 # Ne pas utiliser publish = dist ni /* → index.html : ce n’est pas une SPA Vite, l’App Router + API casseraient.
 [build]
   base = "frontend"
-  command = "npm run build"
+  # Install reproductible puis build (évite des écarts lockfile / node_modules sur Netlify).
+  command = "npm ci && npm run build"
   publish = ".next"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "20.9.0"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
