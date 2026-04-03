@@ -308,14 +308,7 @@ async function postLaunchCampaign(req: NextRequest) {
   }
 
   const nb = mapped.length;
-  const n8nConfigured = Boolean(process.env.N8N_WEBHOOK_URL?.trim());
-  const skippedN8nForLocal =
-    direct && n8nConfigured && nextjsHostnameIsLocal(nextjsUrl);
-  const message = direct
-    ? skippedN8nForLocal
-      ? `${nb} e-mail(s) envoyé(s). En local, n8n n’est pas appelé (NEXTJS_URL non public). Mets NEXTJS_URL sur ton URL tunnel pour déléguer à n8n.`
-      : `${nb} e-mail(s) envoyé(s) depuis Postuly (sans webhook n8n).`
-    : `${nb} e-mail(s) confié(s) à n8n (cadence définie dans le workflow).`;
+  const message = `${nb} e-mail(s) envoyé(s).`;
 
   return NextResponse.json({
     success: true,

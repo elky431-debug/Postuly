@@ -19,6 +19,7 @@ function isNextOnlyApiPath(path: string): boolean {
     path.startsWith("/api/entreprises/") ||
     path.startsWith("/api/applications/update-status") ||
     path.startsWith("/api/cv/upload") ||
+    path.startsWith("/api/cv/generate-from-form") ||
     path.startsWith("/api/relance/") ||
     path.startsWith("/api/alternance/")
   );
@@ -64,11 +65,18 @@ async function parseErrorResponse(response: Response): Promise<string> {
   if (raw.trim().startsWith("{")) {
     try {
       const body = JSON.parse(raw) as Record<string, unknown>;
+      const errStr = typeof body.error === "string" ? body.error : "";
+      const detStr = typeof body.detail === "string" ? body.detail : "";
+      if (errStr && detStr) {
+        const d = detStr.trim();
+        /* Évite d’afficher un gros JSON technique si `error` est déjà un message lisible. */
+        if (d.startsWith("{") || d.length > 280) {
+          return errStr;
+        }
+        return `${errStr} — ${detStr}`;
+      }
       if (typeof body.detail === "string") {
         return body.detail;
-      }
-      if (typeof body.error === "string" && typeof body.detail === "string") {
-        return `${body.error} — ${body.detail}`;
       }
       if (typeof body.error === "string") {
         return body.error;
@@ -81,6 +89,15 @@ async function parseErrorResponse(response: Response): Promise<string> {
   if (ct.includes("application/json") && raw.trim()) {
     try {
       const body = JSON.parse(raw) as Record<string, unknown>;
+      const errStr = typeof body.error === "string" ? body.error : "";
+      const detStr = typeof body.detail === "string" ? body.detail : "";
+      if (errStr && detStr) {
+        const d = detStr.trim();
+        if (d.startsWith("{") || d.length > 280) {
+          return errStr;
+        }
+        return `${errStr} — ${detStr}`;
+      }
       if (typeof body.detail === "string") {
         const d = body.detail;
         if (status === 500 && /^internal server error$/i.test(d.trim())) {
@@ -93,9 +110,6 @@ async function parseErrorResponse(response: Response): Promise<string> {
       }
       if (Array.isArray(body.detail)) {
         return body.detail.map((x: { msg?: string }) => x.msg || JSON.stringify(x)).join(" ; ");
-      }
-      if (typeof body.error === "string" && typeof body.detail === "string") {
-        return `${body.error} — ${body.detail}`;
       }
       if (typeof body.error === "string") {
         return body.error;

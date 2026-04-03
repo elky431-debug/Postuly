@@ -99,7 +99,7 @@ export default function CampaignDetailPage() {
         body: { campaignId: campaign.id },
       });
       if (data.success) {
-        alert(data.message ?? `${data.nb_emails ?? 0} e-mail(s) confié(s) à n8n.`);
+        alert(data.message ?? `${data.nb_emails ?? 0} e-mail(s) envoyé(s).`);
       }
       await loadData();
     } catch (e) {

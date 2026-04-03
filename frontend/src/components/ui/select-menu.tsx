@@ -110,14 +110,15 @@ export function SelectMenu({
         id={listId}
         role="listbox"
         aria-label={label}
-        className="max-h-60 overflow-auto rounded-xl border border-gray-100 bg-white py-1 shadow-lg ring-1 ring-black/[0.04]"
+        className="max-h-60 overflow-auto rounded-xl border border-orange-100/70 bg-white py-1.5 shadow-xl ring-1 ring-orange-500/[0.06]"
         style={{
           position: "fixed",
           top: coords.top,
           left: coords.left,
           width: Math.max(coords.width, 160),
           zIndex: 9999,
-          boxShadow: "0 12px 40px -12px rgba(254, 106, 46, 0.18)",
+          boxShadow:
+            "0 18px 50px -16px rgba(15, 23, 42, 0.12), 0 8px 24px -12px rgba(254, 106, 46, 0.15)",
         }}
       >
         {options.map((opt) => {
@@ -132,7 +133,7 @@ export function SelectMenu({
                   "flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm transition-colors",
                   isSelected
                     ? "bg-gradient-to-r from-[#FFF1E3] to-white font-medium text-gray-900"
-                    : "text-gray-700 hover:bg-gray-50"
+                    : "text-gray-700 hover:bg-orange-50/60 hover:text-gray-900"
                 )}
                 onClick={() => {
                   onChange(opt.value);

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { KanbanBoardEditorial } from "@/components/kanban/kanban-board-editorial";
 import { Button } from "@/components/ui/button";
+import { SelectMenu, type SelectMenuOption } from "@/components/ui/select-menu";
 import { Columns3, RefreshCw, Send } from "lucide-react";
 import { api } from "@/lib/api";
 import { getAccessTokenForApi } from "@/lib/auth-session";
@@ -13,6 +14,29 @@ import type { Application, ApplicationStatus } from "@/lib/types";
 /** Statuts affichés dans les 3 colonnes du Kanban. */
 const KANBAN_STATUSES: ApplicationStatus[] = [
   "sent",
+];
+
+const KANBAN_CONTRACT_OPTIONS: SelectMenuOption[] = [
+  { value: "all", label: "Tous" },
+  { value: "cdi", label: "CDI" },
+  { value: "cdd", label: "CDD" },
+  { value: "stage", label: "Stage" },
+  { value: "alternance", label: "Alternance" },
+  { value: "freelance", label: "Freelance" },
+];
+
+const KANBAN_DATE_OPTIONS: SelectMenuOption[] = [
+  { value: "all", label: "Toutes" },
+  { value: "today", label: "Aujourd'hui" },
+  { value: "7d", label: "7 derniers jours" },
+  { value: "30d", label: "30 derniers jours" },
+  { value: "custom", label: "Personnalisé" },
+];
+
+const KANBAN_SORT_OPTIONS: SelectMenuOption[] = [
+  { value: "recent", label: "Plus récent" },
+  { value: "oldest", label: "Plus ancien" },
+  { value: "company_az", label: "A→Z entreprise" },
 ];
 
 export default function KanbanPage() {
@@ -192,71 +216,70 @@ export default function KanbanPage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-stone-200 bg-white p-4">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <label>
-                <span className="mb-1.5 block text-xs font-medium text-stone-500">Type de contrat</span>
-                <select
+          <section className="rounded-2xl border border-stone-200/90 bg-gradient-to-br from-white via-white to-orange-50/[0.35] p-5 shadow-[0_12px_40px_-28px_rgba(15,23,42,0.35)] sm:p-6">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-stone-400">
+              Filtres
+            </p>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6">
+              <div>
+                <span className="block text-xs font-semibold uppercase tracking-wide text-stone-500">
+                  Type de contrat
+                </span>
+                <SelectMenu
+                  label="Type de contrat"
+                  options={KANBAN_CONTRACT_OPTIONS}
                   value={contractFilter}
-                  onChange={(e) => setContractFilter(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none focus:border-orange-300"
-                >
-                  <option value="all">Tous</option>
-                  <option value="cdi">CDI</option>
-                  <option value="cdd">CDD</option>
-                  <option value="stage">Stage</option>
-                  <option value="alternance">Alternance</option>
-                  <option value="freelance">Freelance</option>
-                </select>
-              </label>
+                  onChange={setContractFilter}
+                />
+              </div>
 
-              <label>
-                <span className="mb-1.5 block text-xs font-medium text-stone-500">Date d&apos;envoi</span>
-                <select
+              <div>
+                <span className="block text-xs font-semibold uppercase tracking-wide text-stone-500">
+                  Date d&apos;envoi
+                </span>
+                <SelectMenu
+                  label="Date d'envoi"
+                  options={KANBAN_DATE_OPTIONS}
                   value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none focus:border-orange-300"
-                >
-                  <option value="all">Toutes</option>
-                  <option value="today">Aujourd&apos;hui</option>
-                  <option value="7d">7 derniers jours</option>
-                  <option value="30d">30 derniers jours</option>
-                  <option value="custom">Personnalisé</option>
-                </select>
-              </label>
+                  onChange={setDateFilter}
+                />
+              </div>
 
-              <label>
-                <span className="mb-1.5 block text-xs font-medium text-stone-500">Tri</span>
-                <select
+              <div>
+                <span className="block text-xs font-semibold uppercase tracking-wide text-stone-500">
+                  Tri
+                </span>
+                <SelectMenu
+                  label="Tri"
+                  options={KANBAN_SORT_OPTIONS}
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none focus:border-orange-300"
-                >
-                  <option value="recent">Plus récent</option>
-                  <option value="oldest">Plus ancien</option>
-                  <option value="company_az">A→Z entreprise</option>
-                </select>
-              </label>
+                  onChange={setSortBy}
+                />
+              </div>
             </div>
 
             {dateFilter === "custom" && (
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <label>
-                  <span className="mb-1.5 block text-xs font-medium text-stone-500">Du</span>
+              <div className="mt-5 grid grid-cols-1 gap-4 border-t border-stone-200/70 pt-5 sm:grid-cols-2">
+                <label className="block">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    Du
+                  </span>
                   <input
                     type="date"
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
-                    className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none focus:border-orange-300"
+                    className="mt-2 h-11 w-full rounded-xl border border-stone-200 bg-white px-3.5 text-sm text-stone-800 shadow-sm outline-none transition-shadow focus:border-orange-200 focus:ring-2 focus:ring-[#FE6A2E]/20"
                   />
                 </label>
-                <label>
-                  <span className="mb-1.5 block text-xs font-medium text-stone-500">Au</span>
+                <label className="block">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    Au
+                  </span>
                   <input
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
-                    className="h-10 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none focus:border-orange-300"
+                    className="mt-2 h-11 w-full rounded-xl border border-stone-200 bg-white px-3.5 text-sm text-stone-800 shadow-sm outline-none transition-shadow focus:border-orange-200 focus:ring-2 focus:ring-[#FE6A2E]/20"
                   />
                 </label>
               </div>

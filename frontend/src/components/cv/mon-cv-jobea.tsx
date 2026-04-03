@@ -43,13 +43,6 @@ const CONTRACT_SELECT_OPTIONS: SelectMenuOption[] = [
   { value: "cdi", label: "CDI" },
 ];
 
-const PROFIL_SELECT_OPTIONS: SelectMenuOption[] = [
-  { value: "", label: "Selon mon compte Postuly" },
-  { value: "etudiant", label: "Étudiant / jeune diplômé" },
-  { value: "jeune_actif", label: "Jeune actif" },
-  { value: "reconversion", label: "En reconversion" },
-];
-
 /** Charte Postuly (sidebar / dashboard) */
 const ORANGE = "#FE6A2E";
 const ORANGE_LIGHT = "#FFF1E3";
@@ -292,8 +285,6 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
     setCoachPoste,
     coachContrat,
     setCoachContrat,
-    coachProfilHint,
-    setCoachProfilHint,
     coachError,
     coachResult,
     analysisPhase,
@@ -620,7 +611,7 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                       className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FE6A2E]/20 focus:border-orange-200/80 transition-shadow"
                     />
                   </label>
-                  <div className="block">
+                  <div className="block sm:col-span-2">
                     <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                       Type de contrat
                     </span>
@@ -630,19 +621,6 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                       value={coachContrat}
                       onChange={(v) => setCoachContrat(v as Campaign["contract_type"] | "")}
                       placeholder="Choisir…"
-                    />
-                  </div>
-                  <div className="block">
-                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                      Profil (optionnel)
-                    </span>
-                    <SelectMenu
-                      label="Profil (optionnel)"
-                      options={PROFIL_SELECT_OPTIONS}
-                      value={coachProfilHint}
-                      onChange={(v) =>
-                        setCoachProfilHint(v as "" | "etudiant" | "jeune_actif" | "reconversion")
-                      }
                     />
                   </div>
                 </div>
@@ -906,7 +884,7 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                 )}
               </div>
             </label>
-            <div className="block">
+            <div className="block sm:col-span-2">
               <span className="text-sm font-semibold text-gray-800">Type de contrat</span>
               <SelectMenu
                 label="Type de contrat"
@@ -914,19 +892,6 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
                 value={coachContrat}
                 onChange={(v) => setCoachContrat(v as Campaign["contract_type"] | "")}
                 placeholder="Choisir…"
-                disabled={analysisPhase === "analyzing"}
-                dense
-              />
-            </div>
-            <div className="block">
-              <span className="text-sm font-semibold text-gray-800">Profil (optionnel)</span>
-              <SelectMenu
-                label="Profil (optionnel)"
-                options={PROFIL_SELECT_OPTIONS}
-                value={coachProfilHint}
-                onChange={(v) =>
-                  setCoachProfilHint(v as "" | "etudiant" | "jeune_actif" | "reconversion")
-                }
                 disabled={analysisPhase === "analyzing"}
                 dense
               />
@@ -943,6 +908,7 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
           <div className="h-1 w-full opacity-90" style={{ background: CTA_GRAD }} aria-hidden />
           <div className="p-6 sm:p-8">
           {!hasParsed && !uploading ? (
+            <>
             <label className="block cursor-pointer">
               <div
                 onDragOver={onDragOver}
@@ -994,6 +960,16 @@ export function MonCvJobeaExperience(props: MonCvJobeaProps) {
               </div>
               <input type="file" className="sr-only" accept={accept} onChange={onFileInput} />
             </label>
+            <div className="mt-6 flex flex-col items-center gap-3 border-t border-gray-100 pt-6 text-center">
+              <p className="text-sm text-gray-500">Tu n’as pas encore de fichier ?</p>
+              <Link
+                href="/cv/create"
+                className="inline-flex items-center justify-center rounded-xl border border-orange-200 bg-orange-50/80 px-5 py-2.5 text-sm font-semibold text-orange-800 transition hover:bg-orange-100"
+              >
+                Je n’ai pas de CV, en créer un
+              </Link>
+            </div>
+            </>
           ) : uploading ? (
             <div className="border-2 border-dashed border-gray-200 rounded-2xl min-h-[240px] flex flex-col items-center justify-center bg-gray-50/60">
               <span

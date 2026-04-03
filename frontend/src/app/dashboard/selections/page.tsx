@@ -360,7 +360,7 @@ export default function SelectionsPage() {
         title: "Campagne lancée",
         message:
           n8n.message ??
-          `${created.applications_created} candidature(s) créée(s). Les e-mails sont confiés à n8n.`,
+          `${created.applications_created} candidature(s) créée(s). Les e-mails ont été envoyés.`,
       });
       setSelectedKeys(new Set());
       setShowLaunchConfig(false);
@@ -722,7 +722,7 @@ export default function SelectionsPage() {
                   >
                     {launching
                       ? launchPhase === "n8n"
-                        ? "Envoi à n8n…"
+                        ? "Envoi des e-mails…"
                         : "Génération des lettres…"
                       : "Lancer la campagne"}
                   </button>
@@ -734,47 +734,61 @@ export default function SelectionsPage() {
 
         {launchFeedback && (
           <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
             role="dialog"
             aria-modal="true"
             aria-labelledby="launch-feedback-title"
             onClick={() => setLaunchFeedback(null)}
           >
             <div
-              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/20 bg-white shadow-2xl shadow-orange-500/10"
+              className={`relative w-full overflow-hidden rounded-3xl border bg-white shadow-2xl ${
+                launchFeedback.variant === "success"
+                  ? "max-w-lg border-orange-100/80 shadow-orange-500/15 ring-1 ring-orange-100/60"
+                  : "max-w-md border-white/20 shadow-orange-500/10"
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
               {launchFeedback.variant === "success" && (
-                <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-br from-amber-300/40 to-orange-400/30 blur-2xl" />
+                <>
+                  <div className="pointer-events-none absolute -left-12 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-amber-200/50 to-orange-300/30 blur-3xl" />
+                  <div className="pointer-events-none absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-gradient-to-tl from-rose-200/40 to-orange-200/25 blur-3xl" />
+                </>
               )}
-              <div className="relative px-8 pb-8 pt-10 text-center">
+              <div
+                className={`relative text-center ${
+                  launchFeedback.variant === "success" ? "px-10 pb-9 pt-11" : "px-8 pb-8 pt-10"
+                }`}
+              >
                 {launchFeedback.variant === "success" ? (
                   <>
-                    <div className="mx-auto mb-5 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 shadow-lg shadow-orange-500/35 ring-4 ring-orange-100">
+                    <div className="relative mx-auto mb-6 flex h-[5rem] w-[5rem] items-center justify-center rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 shadow-[0_20px_50px_-12px_rgba(249,115,22,0.55)] ring-[6px] ring-orange-100/90">
                       <PartyPopper
-                        className="h-9 w-9 text-white drop-shadow-sm"
+                        className="h-11 w-11 text-white drop-shadow-md"
                         strokeWidth={2}
                         aria-hidden
                       />
                     </div>
-                    <div className="mb-1 flex items-center justify-center gap-1.5">
-                      <Sparkles className="h-4 w-4 text-amber-500" aria-hidden />
-                      <span className="text-sm font-semibold uppercase tracking-wide text-orange-600">
+                    <div className="mx-auto mb-5 inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-orange-200/90 bg-gradient-to-r from-amber-50 via-white to-rose-50 px-7 py-3.5 shadow-[0_12px_40px_-12px_rgba(234,88,12,0.35)] sm:px-10 sm:py-4">
+                      <Sparkles
+                        className="h-5 w-5 shrink-0 text-amber-500 sm:h-6 sm:w-6"
+                        aria-hidden
+                      />
+                      <span className="bg-gradient-to-r from-orange-600 via-orange-500 to-rose-600 bg-clip-text text-lg font-extrabold uppercase tracking-[0.18em] text-transparent sm:text-xl">
                         Félicitations
                       </span>
-                      <Sparkles className="h-4 w-4 text-amber-500" aria-hidden />
+                      <Sparkles
+                        className="h-5 w-5 shrink-0 text-amber-500 sm:h-6 sm:w-6"
+                        aria-hidden
+                      />
                     </div>
                     <h2
                       id="launch-feedback-title"
-                      className="text-xl font-bold tracking-tight text-neutral-900"
+                      className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-[1.75rem] sm:leading-snug"
                     >
                       {launchFeedback.title}
                     </h2>
-                    <p className="mt-3 text-sm leading-relaxed text-neutral-600">
-                      {launchFeedback.message}
-                    </p>
-                    <p className="mt-4 text-xs text-neutral-400">
-                      Les e-mails partiront selon la cadence définie dans ton workflow n8n.
+                    <p className="mt-4 text-[15px] leading-relaxed text-neutral-600 sm:text-base">
+                      Tes e-mails ont bien été envoyés.
                     </p>
                   </>
                 ) : (
@@ -811,12 +825,14 @@ export default function SelectionsPage() {
                 <button
                   type="button"
                   onClick={() => setLaunchFeedback(null)}
-                  className={`mt-8 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-95 active:scale-[0.99] ${
+                  className={`w-full font-semibold text-white transition hover:opacity-95 active:scale-[0.99] ${
                     launchFeedback.variant === "success"
-                      ? "bg-gradient-to-r from-orange-500 to-rose-500 shadow-orange-500/25"
-                      : launchFeedback.variant === "error"
-                        ? "bg-neutral-800 shadow-neutral-900/20"
-                        : "bg-neutral-700 shadow-neutral-900/15"
+                      ? "mt-9 rounded-2xl bg-gradient-to-r from-orange-500 via-orange-500 to-rose-500 px-4 py-3.5 text-[15px] shadow-lg shadow-orange-500/30"
+                      : `mt-8 rounded-xl px-4 py-3 text-sm shadow-md ${
+                          launchFeedback.variant === "error"
+                            ? "bg-neutral-800 shadow-neutral-900/20"
+                            : "bg-neutral-700 shadow-neutral-900/15"
+                        }`
                   }`}
                 >
                   {launchFeedback.variant === "success" ? "Super, merci !" : "Fermer"}
