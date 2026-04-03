@@ -9,12 +9,14 @@ export function SupabaseConfigMissing({ context }: { context?: string }) {
       <div className="max-w-lg rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
         <h1 className="text-lg font-semibold text-stone-900">Configuration Supabase manquante</h1>
         <p className="mt-3 text-sm leading-relaxed text-stone-600">
-          Définis sur Netlify (Site settings → Environment variables), pour <strong>Production</strong> au minimum :{" "}
-          <code className="rounded bg-stone-100 px-1.5 py-0.5 text-xs">NEXT_PUBLIC_SUPABASE_URL</code> et{" "}
-          <code className="rounded bg-stone-100 px-1.5 py-0.5 text-xs">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> (ou{" "}
-          <code className="rounded bg-stone-100 px-1.5 py-0.5 text-xs">NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code>
-          ). Les préfixes <code className="text-xs">NEXT_PUBLIC_</code> sont obligatoires : ils sont figés au{" "}
-          <strong>build</strong>, puis clique sur <strong>Clear cache and deploy site</strong>.
+          Sur Netlify (Site settings → Environment variables), il faut au minimum l’URL du projet et la clé anon /
+          publishable. Soit{" "}
+          <code className="rounded bg-stone-100 px-1.5 py-0.5 text-xs">NEXT_PUBLIC_SUPABASE_URL</code> +{" "}
+          <code className="rounded bg-stone-100 px-1.5 py-0.5 text-xs">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, soit (après
+          la dernière mise à jour du code) les alias{" "}
+          <code className="rounded bg-stone-100 px-1.5 py-0.5 text-xs">SUPABASE_URL</code> +{" "}
+          <code className="rounded bg-stone-100 px-1.5 py-0.5 text-xs">SUPABASE_ANON_KEY</code> — ils sont recopiés au{" "}
+          <strong>build</strong>. Puis <strong>Clear cache and deploy site</strong>.
         </p>
         {context ? <p className="mt-4 text-xs text-stone-500">{context}</p> : null}
       </div>
