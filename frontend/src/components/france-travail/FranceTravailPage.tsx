@@ -5,7 +5,7 @@ import {
   Search, MapPin, Briefcase, Clock, Euro, ChevronDown, ChevronUp,
   ExternalLink, Phone, Mail, Users, Star, Award, BookOpen,
   Car, Languages, Accessibility, CalendarDays, Building2,
-  Sparkles, Copy, Check, X, Send, Zap,
+  Sparkles, Copy, Check, X, Zap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import type { FTOffre } from "@/app/api/france-travail/search/route";
@@ -101,11 +101,8 @@ function CompanyAvatar({ offre, size = "md" }: { offre: FTOffre; size?: "sm" | "
 function ApplyModal({ offre, onClose }: { offre: FTOffre; onClose: () => void }) {
   const [letter, setLetter] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [gmailRequired, setGmailRequired] = useState(false);
 
   // Fermer avec Escape
   useEffect(() => {
@@ -156,46 +153,6 @@ function ApplyModal({ offre, onClose }: { offre: FTOffre; onClose: () => void })
     });
   }
 
-  async function sendDirectly() {
-    if (!offre.emailContact) return;
-    if (!letter.trim()) { setError("Génère ou écris une lettre avant d'envoyer."); return; }
-    setSending(true);
-    setError(null);
-    setGmailRequired(false);
-    try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const res = await fetch("/api/france-travail/apply", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          to: offre.emailContact,
-          subject: `Candidature – ${offre.titre}${offre.entreprise ? ` – ${offre.entreprise}` : ""}`,
-          letter,
-        }),
-      });
-      const data = (await res.json()) as { success?: boolean; error?: string; gmailRequired?: boolean };
-      if (data.gmailRequired) { setGmailRequired(true); return; }
-      if (data.error) { setError(data.error); return; }
-      setSuccess(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur d'envoi");
-    } finally {
-      setSending(false);
-    }
-  }
-
-  function applyByMailto() {
-    const subject = encodeURIComponent(`Candidature – ${offre.titre}${offre.entreprise ? ` – ${offre.entreprise}` : ""}`);
-    const body = encodeURIComponent(letter || `Bonjour,\n\nJe souhaite postuler au poste de ${offre.titre}.\n\nCordialement`);
-    window.open(`mailto:${offre.emailContact ?? ""}?subject=${subject}&body=${body}`, "_blank");
-    setSuccess(true);
-  }
 
   const applyUrl = offre.urlPostulation ?? offre.urlFranceTravail;
 
@@ -235,18 +192,7 @@ function ApplyModal({ offre, onClose }: { offre: FTOffre; onClose: () => void })
 
         {/* Corps */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {success ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 mb-4">
-                <Check className="h-8 w-8 text-emerald-500" />
-              </div>
-              <h3 className="font-semibold text-stone-900 text-lg">Candidature envoyée !</h3>
-              <p className="text-stone-500 text-sm mt-1">Email envoyé depuis ton Gmail avec ta lettre et ton CV en pièce jointe.</p>
-              <button onClick={onClose} className="mt-6 px-5 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors">
-                Fermer
-              </button>
-            </div>
-          ) : (
+          {(
             <>
               {/* Lettre de motivation */}
               <div>
@@ -282,14 +228,6 @@ function ApplyModal({ offre, onClose }: { offre: FTOffre; onClose: () => void })
                 )}
               </div>
 
-              {/* Gmail requis */}
-              {gmailRequired && (
-                <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
-                  <p className="font-medium">Gmail non connecté</p>
-                  <p className="mt-0.5 text-xs">Connecte ton Gmail dans <a href="/dashboard/parametres" className="underline font-medium">Paramètres</a> pour envoyer directement. Sinon utilise "Ouvrir dans ma messagerie".</p>
-                </div>
-              )}
-
               {/* Contact info */}
               {(offre.telContact || offre.emailContact) && (
                 <div className="rounded-xl bg-stone-50 border border-stone-100 p-3 flex flex-wrap gap-3">
@@ -310,54 +248,20 @@ function ApplyModal({ offre, onClose }: { offre: FTOffre; onClose: () => void })
         </div>
 
         {/* Footer actions */}
-        {!success && (
-          <div className="flex items-center justify-between gap-3 p-6 border-t border-stone-100 bg-stone-50/50">
-            <a
-              href={offre.urlFranceTravail}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-700 transition-colors"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Voir l'offre officielle
-            </a>
-
-            <div className="flex flex-wrap gap-2">
-              {offre.emailContact && (
-                <>
-                  <button
-                    type="button"
-                    onClick={sendDirectly}
-                    disabled={sending || !letter.trim()}
-                    className="flex items-center gap-1.5 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
-                  >
-                    <Send className="h-4 w-4" />
-                    {sending ? "Envoi…" : "Envoyer via Gmail"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={applyByMailto}
-                    className="flex items-center gap-1.5 rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 hover:bg-stone-50 transition-colors"
-                  >
-                    <Mail className="h-4 w-4" />
-                    Ouvrir dans ma messagerie
-                  </button>
-                </>
-              )}
-              {!offre.emailContact && (
-                <a
-                  href={applyUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors"
-                >
-                  <Zap className="h-4 w-4" />
-                  {offre.urlPostulation ? "Postuler en ligne" : "Postuler sur France Travail"}
-                </a>
-              )}
-            </div>
-          </div>
-        )}
+        <div className="flex items-center justify-between gap-3 p-6 border-t border-stone-100 bg-stone-50/50">
+          <p className="text-xs text-stone-400 max-w-xs">
+            Copie ta lettre puis postule via France Travail pour maximiser tes chances.
+          </p>
+          <a
+            href={applyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors whitespace-nowrap"
+          >
+            <Zap className="h-4 w-4" />
+            Postuler sur France Travail
+          </a>
+        </div>
       </div>
     </div>
   );
