@@ -10,27 +10,49 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 
 interface Body {
-  companyName: string;
-  nafText?:    string;
-  address?:    string;
-  romeLabel?:  string;
+  companyName:   string;
+  nafText?:      string;
+  address?:      string;
+  romeLabel?:    string;
+  jobTitle?:     string;
+  jobDescription?: string;
+  contratType?:  string; // CDI, CDD, alternance, stage, MIS...
 }
 
 function buildPrompt(p: {
-  firstName:   string;
-  lastName:    string;
-  email:       string;
-  skills:      string;
-  experiences: string;
-  formations:  string;
-  languages:   string;
-  companyName: string;
-  nafText?:    string;
-  address?:    string;
-  romeLabel?:  string;
+  firstName:    string;
+  lastName:     string;
+  email:        string;
+  skills:       string;
+  experiences:  string;
+  formations:   string;
+  languages:    string;
+  companyName:  string;
+  nafText?:     string;
+  address?:     string;
+  romeLabel?:   string;
+  jobTitle?:    string;
+  jobDescription?: string;
+  contratType?: string;
 }): string {
-  const sector = p.nafText || p.romeLabel || "non spécifié";
-  const city   = p.address || "non spécifiée";
+  const sector   = p.nafText || p.romeLabel || "non spécifié";
+  const city     = p.address || "non spécifiée";
+  const poste    = p.jobTitle || p.romeLabel || "poste proposé";
+  const contrat  = p.contratType || "alternance";
+
+  const toneMap: Record<string, string> = {
+    stage:      "enthousiaste et motivé, style étudiant sérieux, focus sur l'apprentissage",
+    alternance: "dynamique et concret, met en avant le rythme école/entreprise et les compétences en développement",
+    cdi:        "professionnel et confiant, focus sur la valeur ajoutée immédiate et la projection long terme",
+    cdd:        "réactif et opérationnel, disponibilité et adaptabilité mises en avant",
+    mis:        "réactif et disponible immédiatement, met en avant la flexibilité et l'expérience terrain",
+    pro:        "dynamique et concret, met en avant le rythme école/entreprise",
+  };
+  const tone = toneMap[contrat.toLowerCase()] ?? "professionnel et motivé";
+
+  const descSection = p.jobDescription
+    ? `\nDescription du poste :\n${p.jobDescription.slice(0, 600)}\n`
+    : "";
 
   return `Tu es un expert en recrutement français. Tu rédiges des lettres de motivation percutantes, naturelles et personnalisées.
 
@@ -46,20 +68,16 @@ Langues : ${p.languages || "non spécifiées"}
 
 Candidature
 Entreprise : ${p.companyName}
+Poste visé : ${poste}
+Type de contrat : ${contrat}
 Secteur : ${sector}
-Poste visé : alternant(e)
-Type de contrat : alternance
 Ville : ${city}
-
-Ton attendu selon le contrat
-stage : enthousiaste et motivé, style étudiant sérieux, focus sur l'apprentissage
-alternance : dynamique et concret, met en avant le rythme école/entreprise et les compétences en développement
-CDI : professionnel et confiant, focus sur la valeur ajoutée immédiate et la projection long terme
-CDD : réactif et opérationnel, disponibilité et adaptabilité mises en avant
+${descSection}
+Ton attendu : ${tone}
 
 Instructions
 Adopte le ton correspondant au type de contrat ci-dessus
-Structure : accroche (1 phrase marquante) → pourquoi cette entreprise → ce que le candidat apporte → conclusion + appel à action
+Structure : accroche (1 phrase marquante) → pourquoi cette entreprise et ce poste → ce que le candidat apporte concrètement → conclusion + appel à action
 Longueur : 3 paragraphes, max 250 mots
 Langue : français, vouvoiement
 NE PAS inventer de détails absents du profil
@@ -111,7 +129,16 @@ export async function POST(req: NextRequest) {
     : "";
   const email       = (cvParsed.email as string | undefined) || user.email || "";
 
-  const prompt = buildPrompt({ firstName, lastName, email, skills, experiences, formations, languages, ...body });
+  const prompt = buildPrompt({
+    firstName, lastName, email, skills, experiences, formations, languages,
+    companyName:     body.companyName,
+    nafText:         body.nafText,
+    address:         body.address,
+    romeLabel:       body.romeLabel,
+    jobTitle:        body.jobTitle,
+    jobDescription:  body.jobDescription,
+    contratType:     body.contratType,
+  });
 
   const openaiKey = process.env.OPENAI_API_KEY?.trim();
   if (!openaiKey) {
