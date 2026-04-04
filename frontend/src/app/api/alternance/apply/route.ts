@@ -59,16 +59,13 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Profil utilisateur (nom, téléphone, CV) ───────────────────────────────
-  const { data: profile, error: profileErr } = await admin
+  const { data: profile } = await admin
     .from("profiles")
     .select("full_name, cv_url, cv_parsed")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (profileErr || !profile) {
-    return NextResponse.json({ error: "Profil introuvable" }, { status: 404 });
-  }
-  if (!profile.cv_url) {
+  if (!profile?.cv_url) {
     return NextResponse.json(
       { error: "Aucun CV trouvé. Uploade d'abord ton CV dans la section « Mon CV »." },
       { status: 422 }
@@ -76,13 +73,13 @@ export async function POST(req: NextRequest) {
   }
 
   // Extraire prénom / nom
-  const fullName  = (profile.full_name ?? "").trim() || (user.email ?? "Candidat");
+  const fullName  = (profile?.full_name ?? "").trim() || (user.email ?? "Candidat");
   const nameParts = fullName.split(/\s+/);
   const firstName = nameParts[0] ?? "Candidat";
   const lastName  = nameParts.slice(1).join(" ") || ".";
 
   // Email et téléphone depuis cv_parsed ou auth
-  const parsed    = profile.cv_parsed as { email?: string; phone?: string } | null;
+  const parsed    = (profile?.cv_parsed ?? null) as { email?: string; phone?: string } | null;
   const email     = parsed?.email || user.email || "";
   const phone     = parsed?.phone || "0600000000";
 

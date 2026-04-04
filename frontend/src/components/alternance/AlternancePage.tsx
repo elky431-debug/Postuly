@@ -471,7 +471,7 @@ function RecruteurCard({
             <BookmarkCheck className="h-4 w-4" strokeWidth={2} />
             Candidature envoyée
           </div>
-        ) : (
+        ) : item.recipientId ? (
           <button
             type="button"
             onClick={() => onOpenModal(item)}
@@ -479,7 +479,16 @@ function RecruteurCard({
           >
             Postuler <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
-        )}
+        ) : (item.applyUrl || item.website) ? (
+          <a
+            href={item.applyUrl || item.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 text-[12px] font-semibold text-white transition hover:bg-orange-600"
+          >
+            Postuler <ExternalLink className="h-3.5 w-3.5" strokeWidth={2.5} />
+          </a>
+        ) : null}
         {(item.website || item.applyUrl) && (
           <a
             href={item.website || item.applyUrl}
