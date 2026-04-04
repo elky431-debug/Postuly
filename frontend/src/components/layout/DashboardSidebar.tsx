@@ -13,6 +13,7 @@ import {
   UserRound,
   CreditCard,
   GraduationCap,
+  Newspaper,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,8 @@ const MAIN_NAV = [
   { name: "Entreprises", href: "/dashboard/entreprises",   icon: Building2 },
   { name: "Sélections",  href: "/dashboard/selections",    icon: BookmarkCheck },
   { name: "Mon CV",      href: "/cv",                      icon: FileText },
-  { name: "Alternance",  href: "/dashboard/alternance",    icon: GraduationCap },
+  { name: "Alternance",        href: "/dashboard/alternance",      icon: GraduationCap },
+  { name: "France Travail",    href: "/dashboard/france-travail",  icon: Newspaper },
 ] as const;
 
 const SECONDARY_NAV = [
