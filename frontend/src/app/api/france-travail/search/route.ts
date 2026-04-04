@@ -159,12 +159,14 @@ function mapOffre(raw: Record<string, unknown>): FTOffre {
 // ─── Handler ─────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const keywords = searchParams.get("keywords") ?? "";
-  const ville = searchParams.get("ville") ?? "";
-  const contrat = searchParams.get("contrat") ?? "";
-  const experience = searchParams.get("experience") ?? "";
-  const page = Math.max(0, parseInt(searchParams.get("page") ?? "0", 10));
-  const isDebug = searchParams.get("debug") === "1";
+  const keywords    = searchParams.get("keywords") ?? "";
+  const ville       = searchParams.get("ville") ?? "";
+  const contrat     = searchParams.get("contrat") ?? "";
+  const experience  = searchParams.get("experience") ?? "";
+  const dateFilter  = searchParams.get("date") ?? "";      // today | week | month
+  const tempsPlein  = searchParams.get("tempsPlein") ?? ""; // true | false
+  const page        = Math.max(0, parseInt(searchParams.get("page") ?? "0", 10));
+  const isDebug     = searchParams.get("debug") === "1";
 
   const clientId = process.env.FRANCE_TRAVAIL?.trim();
   const clientSecret = process.env.FRANCE_TRAVAIL_API_KEY?.trim();
@@ -224,8 +226,23 @@ export async function GET(req: NextRequest) {
   if (contrat) params.set("typeContrat", contrat);
   if (experience) params.set("experience", experience);
 
+  // Filtre date de publication
+  if (dateFilter) {
+    const now = new Date();
+    const offsets: Record<string, number> = { today: 1, week: 7, month: 30 };
+    const days = offsets[dateFilter];
+    if (days) {
+      const d = new Date(now.getTime() - days * 86_400_000);
+      params.set("minCreationDate", d.toISOString().split("T")[0] + "T00:00:00.000Z");
+    }
+  }
+
+  // Filtre temps plein / partiel
+  if (tempsPlein === "true") params.set("dureeHebdoTravailMax", "35");
+  if (tempsPlein === "false") params.set("dureeHebdoTravailMax", "34");
+
   const start = page * 20;
-  params.set("range", `${start}-${Math.min(start + 19, start + 19)}`);
+  params.set("range", `${start}-${start + 19}`);
   params.set("sort", "1"); // pertinence
 
   const res = await fetch(`${FT_SEARCH_URL}?${params.toString()}`, {

@@ -28,6 +28,19 @@ const EXPERIENCE_OPTIONS = [
   { value: "3", label: "3 ans et plus" },
 ];
 
+const DATE_OPTIONS = [
+  { value: "", label: "Toutes dates" },
+  { value: "today", label: "Aujourd'hui" },
+  { value: "week", label: "Cette semaine" },
+  { value: "month", label: "Ce mois" },
+];
+
+const TEMPS_OPTIONS = [
+  { value: "", label: "Temps plein & partiel" },
+  { value: "true", label: "Temps plein" },
+  { value: "false", label: "Temps partiel" },
+];
+
 const CONTRAT_COLORS: Record<string, string> = {
   CDI: "bg-emerald-50 text-emerald-700 border-emerald-200",
   CDD: "bg-blue-50 text-blue-700 border-blue-200",
@@ -88,9 +101,11 @@ function CompanyAvatar({ offre, size = "md" }: { offre: FTOffre; size?: "sm" | "
 function ApplyModal({ offre, onClose }: { offre: FTOffre; onClose: () => void }) {
   const [letter, setLetter] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [gmailRequired, setGmailRequired] = useState(false);
 
   // Fermer avec Escape
   useEffect(() => {
@@ -141,8 +156,42 @@ function ApplyModal({ offre, onClose }: { offre: FTOffre; onClose: () => void })
     });
   }
 
-  function applyByEmail() {
-    const subject = encodeURIComponent(`Candidature – ${offre.titre} – ${offre.entreprise ?? ""}`);
+  async function sendDirectly() {
+    if (!offre.emailContact) return;
+    if (!letter.trim()) { setError("Génère ou écris une lettre avant d'envoyer."); return; }
+    setSending(true);
+    setError(null);
+    setGmailRequired(false);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const res = await fetch("/api/france-travail/apply", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          to: offre.emailContact,
+          subject: `Candidature – ${offre.titre}${offre.entreprise ? ` – ${offre.entreprise}` : ""}`,
+          letter,
+        }),
+      });
+      const data = (await res.json()) as { success?: boolean; error?: string; gmailRequired?: boolean };
+      if (data.gmailRequired) { setGmailRequired(true); return; }
+      if (data.error) { setError(data.error); return; }
+      setSuccess(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur d'envoi");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function applyByMailto() {
+    const subject = encodeURIComponent(`Candidature – ${offre.titre}${offre.entreprise ? ` – ${offre.entreprise}` : ""}`);
     const body = encodeURIComponent(letter || `Bonjour,\n\nJe souhaite postuler au poste de ${offre.titre}.\n\nCordialement`);
     window.open(`mailto:${offre.emailContact ?? ""}?subject=${subject}&body=${body}`, "_blank");
     setSuccess(true);
@@ -192,7 +241,7 @@ function ApplyModal({ offre, onClose }: { offre: FTOffre; onClose: () => void })
                 <Check className="h-8 w-8 text-emerald-500" />
               </div>
               <h3 className="font-semibold text-stone-900 text-lg">Candidature envoyée !</h3>
-              <p className="text-stone-500 text-sm mt-1">Ton email s'est ouvert avec la lettre prête à envoyer.</p>
+              <p className="text-stone-500 text-sm mt-1">Email envoyé depuis ton Gmail avec ta lettre et ton CV en pièce jointe.</p>
               <button onClick={onClose} className="mt-6 px-5 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors">
                 Fermer
               </button>
@@ -233,6 +282,14 @@ function ApplyModal({ offre, onClose }: { offre: FTOffre; onClose: () => void })
                 )}
               </div>
 
+              {/* Gmail requis */}
+              {gmailRequired && (
+                <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+                  <p className="font-medium">Gmail non connecté</p>
+                  <p className="mt-0.5 text-xs">Connecte ton Gmail dans <a href="/dashboard/parametres" className="underline font-medium">Paramètres</a> pour envoyer directement. Sinon utilise "Ouvrir dans ma messagerie".</p>
+                </div>
+              )}
+
               {/* Contact info */}
               {(offre.telContact || offre.emailContact) && (
                 <div className="rounded-xl bg-stone-50 border border-stone-100 p-3 flex flex-wrap gap-3">
@@ -265,26 +322,39 @@ function ApplyModal({ offre, onClose }: { offre: FTOffre; onClose: () => void })
               Voir l'offre officielle
             </a>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {offre.emailContact && (
-                <button
-                  type="button"
-                  onClick={applyByEmail}
-                  className="flex items-center gap-1.5 rounded-xl border border-orange-300 bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 hover:bg-orange-100 transition-colors"
-                >
-                  <Send className="h-4 w-4" />
-                  Envoyer par email
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={sendDirectly}
+                    disabled={sending || !letter.trim()}
+                    className="flex items-center gap-1.5 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
+                  >
+                    <Send className="h-4 w-4" />
+                    {sending ? "Envoi…" : "Envoyer via Gmail"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={applyByMailto}
+                    className="flex items-center gap-1.5 rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 hover:bg-stone-50 transition-colors"
+                  >
+                    <Mail className="h-4 w-4" />
+                    Ouvrir dans ma messagerie
+                  </button>
+                </>
               )}
-              <a
-                href={applyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors"
-              >
-                <Zap className="h-4 w-4" />
-                {offre.urlPostulation ? "Postuler en ligne" : "Postuler sur France Travail"}
-              </a>
+              {!offre.emailContact && (
+                <a
+                  href={applyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors"
+                >
+                  <Zap className="h-4 w-4" />
+                  {offre.urlPostulation ? "Postuler en ligne" : "Postuler sur France Travail"}
+                </a>
+              )}
             </div>
           </div>
         )}
@@ -448,6 +518,9 @@ export function FranceTravailPage() {
   const [ville, setVille] = useState("");
   const [contrat, setContrat] = useState("");
   const [experience, setExperience] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [tempsPlein, setTempsPlein] = useState("");
+  const [salaireMin, setSalaireMin] = useState("");
   const [offres, setOffres] = useState<FTOffre[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -456,6 +529,16 @@ export function FranceTravailPage() {
   const [searched, setSearched] = useState(false);
   const [applyOffre, setApplyOffre] = useState<FTOffre | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Filtre salaire côté client (le texte du salaire contient souvent "X XXX €")
+  const filteredOffres = salaireMin
+    ? offres.filter((o) => {
+        if (!o.salaire) return false;
+        const match = o.salaire.replace(/\s/g, "").match(/(\d+)/);
+        const val = match ? parseInt(match[1], 10) : 0;
+        return val >= parseInt(salaireMin, 10) * 1000;
+      })
+    : offres;
 
   const search = useCallback(async (p = 0) => {
     abortRef.current?.abort();
@@ -471,6 +554,8 @@ export function FranceTravailPage() {
       if (ville.trim()) params.set("ville", ville.trim());
       if (contrat) params.set("contrat", contrat);
       if (experience) params.set("experience", experience);
+      if (dateFilter) params.set("date", dateFilter);
+      if (tempsPlein) params.set("tempsPlein", tempsPlein);
       params.set("page", String(p));
 
       const res = await fetch(`/api/france-travail/search?${params.toString()}`, { signal: ctrl.signal });
@@ -487,7 +572,7 @@ export function FranceTravailPage() {
     } finally {
       setLoading(false);
     }
-  }, [keywords, ville, contrat, experience]);
+  }, [keywords, ville, contrat, experience, dateFilter, tempsPlein]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -506,36 +591,44 @@ export function FranceTravailPage() {
             <p className="mt-1 text-sm text-stone-500">Offres officielles France Travail · Génère ta lettre et postule en quelques secondes</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Métier, poste, compétence…"
-                value={keywords}
-                onChange={(e) => setKeywords(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-              />
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Ligne 1 : recherche principale */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
+                <input type="text" placeholder="Métier, poste, compétence…" value={keywords} onChange={(e) => setKeywords(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+              </div>
+              <div className="sm:w-48 relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
+                <input type="text" placeholder="Ville, département…" value={ville} onChange={(e) => setVille(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+              </div>
+              <button type="submit" disabled={loading} className="px-6 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 disabled:opacity-60 transition-colors whitespace-nowrap">
+                {loading ? "Recherche…" : "Rechercher"}
+              </button>
             </div>
-            <div className="sm:w-48 relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Ville, département…"
-                value={ville}
-                onChange={(e) => setVille(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-              />
+
+            {/* Ligne 2 : filtres avancés */}
+            <div className="flex flex-wrap gap-2">
+              <select value={contrat} onChange={(e) => setContrat(e.target.value)} className="px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                {CONTRAT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <select value={experience} onChange={(e) => setExperience(e.target.value)} className="px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                {EXPERIENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                {DATE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <select value={tempsPlein} onChange={(e) => setTempsPlein(e.target.value)} className="px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                {TEMPS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <div className="relative">
+                <Euro className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stone-400 pointer-events-none" />
+                <input type="number" placeholder="Salaire min (k€/an)" value={salaireMin} onChange={(e) => setSalaireMin(e.target.value)} min={0} max={200}
+                  className="pl-7 pr-3 py-1.5 w-44 rounded-lg border border-stone-200 bg-stone-50 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+              </div>
             </div>
-            <select value={contrat} onChange={(e) => setContrat(e.target.value)} className="sm:w-36 px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
-              {CONTRAT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-            <select value={experience} onChange={(e) => setExperience(e.target.value)} className="sm:w-44 px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
-              {EXPERIENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-            <button type="submit" disabled={loading} className="px-6 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 disabled:opacity-60 transition-colors whitespace-nowrap">
-              {loading ? "Recherche…" : "Rechercher"}
-            </button>
           </form>
         </div>
       </div>
@@ -546,7 +639,7 @@ export function FranceTravailPage() {
 
         {searched && !loading && (
           <p className="mb-4 text-sm text-stone-500">
-            {total === 0 ? "Aucune offre trouvée." : `${total.toLocaleString("fr-FR")} offre${total > 1 ? "s" : ""} trouvée${total > 1 ? "s" : ""}`}
+            {filteredOffres.length === 0 ? "Aucune offre trouvée." : `${filteredOffres.length} offre${filteredOffres.length > 1 ? "s" : ""} affichée${filteredOffres.length > 1 ? "s" : ""}${total > filteredOffres.length ? ` (${total.toLocaleString("fr-FR")} au total)` : ""}`}
           </p>
         )}
 
@@ -571,10 +664,10 @@ export function FranceTravailPage() {
           </div>
         )}
 
-        {!loading && offres.length > 0 && (
+        {!loading && filteredOffres.length > 0 && (
           <>
             <div className="space-y-4">
-              {offres.map((offre) => (
+              {filteredOffres.map((offre) => (
                 <OffreCard key={offre.id} offre={offre} onApply={setApplyOffre} />
               ))}
             </div>
@@ -584,7 +677,7 @@ export function FranceTravailPage() {
                   ← Précédent
                 </button>
               )}
-              <span className="text-sm text-stone-500">Page {page + 1} · {offres.length} offres affichées</span>
+              <span className="text-sm text-stone-500">Page {page + 1}</span>
               {offres.length === 20 && (page + 1) * 20 < total && (
                 <button onClick={() => search(page + 1)} className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors">
                   Suivant →
@@ -594,7 +687,7 @@ export function FranceTravailPage() {
           </>
         )}
 
-        {!loading && searched && offres.length === 0 && !error && (
+        {!loading && searched && filteredOffres.length === 0 && !error && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-stone-100">
               <Search className="h-8 w-8 text-stone-400" />
