@@ -81,7 +81,7 @@ const IGNORE_PATTERNS = [
   /^no.?reply@/i, /^noreply@/i, /^donotreply@/i, /^bounce@/i, /^mailer@/i,
   /example\.(com|org|net)/i, /^test@/i, /sentry\.io/i, /wixpress\.com/i,
   /\.(png|jpg|gif|svg|js|css)$/i, /w3\.org/i, /schema\.org/i,
-  /yourdomain/i, /domain\.com/i, /email@/i, /^info@info\./i,
+  /yourdomain/i, /domain\.(com|fr|net|org)/i, /domaine\.(com|fr|net)/i, /email@/i, /^info@info\./i,
   /googletagmanager/i, /googleapis/i, /cloudflare/i, /wordpress\.org/i,
 ];
 
@@ -261,14 +261,58 @@ async function searchHunter(domain: string): Promise<EmailContact[]> {
 /**
  * Trouve le site web d'une entreprise via Serper si pas fourni.
  */
-/** Simplifie le nom légal pour trouver le bon domaine (ex: "CAPGEMINI TECHNOLOGY SERVICES SAS" → "Capgemini"). */
+/** Simplifie le nom légal → premier mot significatif pour deviner le domaine email. */
 function simplifyCompanyName(nom: string): string {
   return nom
     .replace(/\b(SAS|SARL|SA|SNC|GIE|SASU|EURL|ETS|SCS|SCA|SE|NV|BV|LTD|LLC|GMBH|AG)\b/gi, "")
-    .replace(/\b(FRANCE|DIGITAL|SERVICES|SOLUTIONS|GROUPE|GROUP|HOLDING|INTERNATIONAL|EUROPE|GLOBAL)\b/gi, "")
+    .replace(/\b(FRANCE|DIGITAL|SERVICES|SOLUTIONS|GROUPE|GROUP|HOLDING|INTERNATIONAL|EUROPE|GLOBAL|BUSINESS)\b/gi, "")
     .replace(/\s+/g, " ")
     .trim()
-    .split(" ").slice(0, 2).join(" "); // Garder seulement les 2 premiers mots significatifs
+    .split(" ").slice(0, 2).join(" ");
+}
+
+/**
+ * Construit une liste de domaines à tester avec Hunter par ordre de priorité :
+ * 1. Domaine trouvé par Serper
+ * 2. Domaine "racine" si Serper a trouvé un sous-domaine/portail (ex: fr.capgemini.talentnet.community → capgemini.com)
+ * 3. Domaine deviné depuis le nom de l'entreprise (ex: "ORANGE BUSINESS" → orange.com / orange.fr)
+ */
+function buildHunterDomains(nom: string, serperDomain: string | null): string[] {
+  const domains: string[] = [];
+  if (serperDomain) domains.push(serperDomain);
+
+  // Extraire un mot-clé du nom de l'entreprise
+  const keyword = simplifyCompanyName(nom).toLowerCase().split(" ")[0].replace(/[^a-z0-9-]/g, "");
+  if (!keyword || keyword.length < 2) return domains;
+
+  // Si Serper a trouvé un sous-domaine/portail contenant le mot-clé, essayer le domaine simple
+  if (serperDomain && serperDomain.split(".").length >= 3) {
+    const parts = serperDomain.split(".");
+    for (const part of parts) {
+      if (part.length > 3 && keyword.includes(part.slice(0, 4))) {
+        domains.push(`${part}.com`);
+        domains.push(`${part}.fr`);
+        break;
+      }
+    }
+  }
+
+  // Toujours essayer le domaine deviné depuis le nom
+  domains.push(`${keyword}.com`);
+  domains.push(`${keyword}.fr`);
+
+  // Dédoublonner
+  return [...new Set(domains)];
+}
+
+/** Essaie Hunter sur plusieurs domaines et retourne le premier résultat non vide. */
+async function searchHunterMultiple(nom: string, serperDomain: string | null): Promise<{ contacts: EmailContact[]; usedDomain: string | null }> {
+  const domains = buildHunterDomains(nom, serperDomain);
+  for (const domain of domains.slice(0, 4)) { // max 4 tentatives
+    const contacts = await searchHunter(domain);
+    if (contacts.length > 0) return { contacts, usedDomain: domain };
+  }
+  return { contacts: [], usedDomain: serperDomain };
 }
 
 async function findWebsite(nom: string, siren?: string): Promise<string | null> {
@@ -362,11 +406,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   }
 
-  // 2. Scraping + Hunter en parallèle
-  const [scraped, hunterContacts] = await Promise.all([
+  // 2. Scraping + Hunter en parallèle (Hunter essaie plusieurs domaines si le premier est vide)
+  const [scraped, hunterResult] = await Promise.all([
     scrapeEmails(websiteUrl),
-    searchHunter(domain),
+    searchHunterMultiple(nom, domain),
   ]);
+  const hunterContacts = hunterResult.contacts;
 
   // 3. Fusionner : RH scrapés → Hunter trié → autres scrapés (sans doublons)
   const hunterEmails = new Set(hunterContacts.map((c) => c.email));
