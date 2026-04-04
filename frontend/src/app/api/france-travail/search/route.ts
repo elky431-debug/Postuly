@@ -164,10 +164,53 @@ export async function GET(req: NextRequest) {
   const contrat = searchParams.get("contrat") ?? "";
   const experience = searchParams.get("experience") ?? "";
   const page = Math.max(0, parseInt(searchParams.get("page") ?? "0", 10));
+  const isDebug = searchParams.get("debug") === "1";
+
+  const clientId = process.env.FRANCE_TRAVAIL?.trim();
+  const clientSecret = process.env.FRANCE_TRAVAIL_API_KEY?.trim();
+
+  if (isDebug) {
+    // Test OAuth call for diagnosis
+    let tokenResult: string | null = null;
+    let tokenError: string | null = null;
+    if (clientId && clientSecret) {
+      try {
+        const res = await fetch(FT_TOKEN_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            grant_type: "client_credentials",
+            client_id: clientId,
+            client_secret: clientSecret,
+            scope: "api_offresdemploiv2 o2dsoffre",
+          }),
+          signal: AbortSignal.timeout(5000),
+        });
+        const body = await res.text();
+        tokenResult = `HTTP ${res.status}: ${body.slice(0, 300)}`;
+      } catch (e) {
+        tokenError = String(e);
+      }
+    }
+    return NextResponse.json({
+      hasFranceTravail: !!clientId,
+      hasFranceTravailApiKey: !!clientSecret,
+      clientIdPrefix: clientId ? clientId.slice(0, 12) + "..." : null,
+      tokenResult,
+      tokenError,
+    });
+  }
 
   const token = await getToken();
   if (!token) {
-    return NextResponse.json({ offres: [], total: 0, error: "Clés France Travail manquantes." });
+    const hasKeys = !!clientId && !!clientSecret;
+    return NextResponse.json({
+      offres: [],
+      total: 0,
+      error: hasKeys
+        ? "Échec de l'authentification France Travail. Vérifie les clés."
+        : "Clés France Travail manquantes.",
+    });
   }
 
   let departement = "";
