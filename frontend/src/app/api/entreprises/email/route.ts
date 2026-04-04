@@ -319,6 +319,7 @@ export async function GET(req: NextRequest) {
   const siren = (searchParams.get("siren") ?? "").trim();
   const nom = (searchParams.get("nom") ?? "").trim();
   const websiteParam = (searchParams.get("website") ?? "").trim();
+  const isDebug = searchParams.get("debug") === "1";
 
   if (!siren && !nom) {
     return NextResponse.json({ domain: null, websiteUrl: null, contacts: [], error: "Paramètres manquants." });
@@ -335,6 +336,17 @@ export async function GET(req: NextRequest) {
   }
 
   const domain = websiteUrl ? extractDomain(websiteUrl) : null;
+
+  if (isDebug) {
+    return NextResponse.json({
+      debug: true,
+      hasHunterKey: !!process.env.HUNTER_API_KEY?.trim(),
+      hasSerperKey: !!process.env.SERPER_API_KEY?.trim(),
+      websiteUrl,
+      domain,
+      isBlacklisted: domain ? isBlacklisted(domain) : null,
+    });
+  }
 
   if (!websiteUrl || !domain || isBlacklisted(domain)) {
     const result: EmailResult = { domain: null, websiteUrl: null, contacts: [], noEmailReason: "no_website" };

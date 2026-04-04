@@ -135,7 +135,7 @@ const NAF_MAP: Record<string, string[]> = {
   "éducation":          ["85.10Z", "85.20Z", "85.31Z"],
 
   // ── Sport & loisirs
-  "sport":              ["93.11Z", "93.12Z", "93.13Z", "93.19Z", "47.64Z"],
+  "sport":              ["93.11Z", "93.12Z", "93.13Z", "93.19Z"],
   "fitness":            ["93.13Z", "93.11Z"],
   "salle de sport":     ["93.13Z", "93.11Z"],
   "coach sportif":      ["93.13Z", "85.51Z"],
@@ -480,6 +480,8 @@ type RechercheResult = {
 const PAGE_SIZE = 25;
 
 // ─── Cache NAF LLM (évite de rappeler l'IA pour un même terme) ───────────────
+// Incrémenter CACHE_VERSION pour invalider tous les anciens résultats cachés.
+const CACHE_VERSION = "v3";
 const nafLlmCache = new Map<string, { codes: string[] | null; ts: number }>();
 const NAF_CACHE_TTL = 1000 * 60 * 60 * 24; // 24h
 
@@ -489,7 +491,7 @@ async function getNafCodesFromLLM(
   taille: string,
   ville: string,
 ): Promise<string[] | null> {
-  const key = `${secteur.toLowerCase().trim()}|${taille}|${ville.toLowerCase().trim()}`;
+  const key = `${CACHE_VERSION}|${secteur.toLowerCase().trim()}|${taille}|${ville.toLowerCase().trim()}`;
 
   const cached = nafLlmCache.get(key);
   if (cached && Date.now() - cached.ts < NAF_CACHE_TTL) return cached.codes;
@@ -535,6 +537,8 @@ NE JAMAIS ajouter des secteurs non liés au terme sous prétexte qu'ils ont de g
 RÈGLE EXCLUSION :
 Exclus absolument les codes NAF qui produisent du bruit évident.
 Exemples : ne jamais retourner "Production d'électricité" pour "community manager", ni "Portails Internet" pour un poste marketing classique.
+Pour les métiers de coaching, entraînement ou enseignement : NE JAMAIS inclure les codes de commerce de détail (47.XXX).
+Exemple : "coach de sport", "coach sportif", "entraîneur" → UNIQUEMENT 93.13Z, 93.11Z, 93.12Z, 85.51Z — JAMAIS 47.64Z (magasins sport qui incluent la pêche, chasse, etc.).
 
 AUTRES RÈGLES :
 - Maximum 5 codes, du plus spécifique au plus général
@@ -582,6 +586,75 @@ Format exact : [{"code":"62.01Z","label":"Programmation informatique","confidenc
 
     nafLlmCache.set(key, { codes: valid, ts: Date.now() });
     return valid;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Deuxième passe LLM : valide la pertinence de chaque entreprise par rapport
+ * au terme recherché. Permet d'éliminer les faux positifs NAF (ex: magasin de
+ * pêche sous le code 47.64Z "articles de sport" pour "coach de sport").
+ * Retourne les indices des entreprises pertinentes, ou null en cas d'échec.
+ */
+async function filterByRelevanceLLM(
+  secteur: string,
+  companies: Array<{ nom: string; domaine: string }>,
+): Promise<number[] | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+  if (!apiKey || companies.length === 0) return null;
+
+  const list = companies.map((c, i) => `${i}: ${c.nom} (${c.domaine})`).join("\n");
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 200,
+        messages: [
+          {
+            role: "user",
+            content: `Tu identifies les entreprises CLAIREMENT hors-sujet dans une liste.
+
+Recherche emploi : "${secteur}"
+
+Liste (index: nom — domaine NAF) :
+${list}
+
+Retourne les indices des entreprises CLAIREMENT incompatibles avec la recherche.
+Sois très conservateur : n'exclure que ce qui est MANIFESTEMENT hors-sujet.
+Exemples d'exclusion évidente :
+- Magasin de pêche / chasse pour "coach de sport"
+- Pompes funèbres pour "marketing digital"
+- Élevage agricole pour "vendeur en boutique"
+En cas de doute, GARDER l'entreprise (ne pas exclure).
+
+Retourne UNIQUEMENT un tableau JSON des indices À EXCLURE. Ex: [2,7]
+Si rien n'est clairement hors-sujet : retourne [].
+Réponds UNIQUEMENT avec le tableau JSON, rien d'autre.`,
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as { content?: Array<{ text?: string }> };
+    const text = data.content?.[0]?.text?.trim() ?? "";
+    const match = text.match(/\[[\d,\s]*\]/);
+    if (!match) return null;
+
+    const parsed: unknown = JSON.parse(match[0]);
+    if (!Array.isArray(parsed)) return null;
+
+    return (parsed as unknown[]).filter((x): x is number => typeof x === "number");
   } catch {
     return null;
   }
@@ -815,9 +888,24 @@ export async function GET(req: NextRequest) {
       })
     : entreprises;
 
+  // Deuxième passe : exclure les entreprises CLAIREMENT hors-sujet par nom/domaine.
+  // Conservateur : en cas de doute le LLM garde, donc peu de faux positifs.
+  let finalEntreprises = filteredEntreprises;
+  if (secteur.trim() && filteredEntreprises.length > 0 && nafCodes && nafCodes.length > 0) {
+    const companiesForLLM = filteredEntreprises.map((e) => ({
+      nom: e.nom,
+      domaine: e.libelleNaf || e.domaine,
+    }));
+    const excludeIndices = await filterByRelevanceLLM(secteur.trim(), companiesForLLM);
+    if (excludeIndices !== null && excludeIndices.length > 0) {
+      const excludeSet = new Set(excludeIndices);
+      finalEntreprises = filteredEntreprises.filter((_, i) => !excludeSet.has(i));
+    }
+  }
+
   return NextResponse.json({
-    entreprises: filteredEntreprises,
-    total: data.total_results ?? filteredEntreprises.length,
+    entreprises: finalEntreprises,
+    total: finalEntreprises.length,
     page: page - 1,
     totalPages: data.total_pages ?? 1,
   });
