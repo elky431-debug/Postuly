@@ -127,7 +127,7 @@ async function fetchPage(url: string): Promise<string | null> {
         Accept: "text/html,application/xhtml+xml",
         "Accept-Language": "fr-FR,fr;q=0.9",
       },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(2500),
       redirect: "follow",
     });
     if (!res.ok) return null;
@@ -157,14 +157,11 @@ async function scrapeEmails(websiteUrl: string): Promise<{ email: string; isHr: 
 
     // Étape 2 : scraper les pages utiles trouvées + les URLs classiques en parallèle
     const classicPaths = [
-      "/contact", "/nous-contacter", "/contactez-nous",
-      "/recrutement", "/carrieres", "/emploi", "/jobs",
-      "/a-propos", "/about", "/qui-sommes-nous", "/equipe",
-      "/mentions-legales",
+      "/contact", "/nous-contacter", "/recrutement", "/carrieres", "/emploi",
     ].map((p) => `${websiteUrl}${p}`);
 
-    // Dédoubler : classiques + découverts dynamiquement
-    const allToScrape = [...new Set([...internalLinks, ...classicPaths])].slice(0, 14);
+    // Dédoubler : classiques + découverts dynamiquement — limité à 5 pour rester dans le timeout Netlify
+    const allToScrape = [...new Set([...internalLinks, ...classicPaths])].slice(0, 5);
 
     const results = await Promise.allSettled(allToScrape.map(fetchPage));
     for (const r of results) {
@@ -215,7 +212,7 @@ async function fetchHunterPage(domain: string, apiKey: string): Promise<HunterEm
   url.searchParams.set("api_key", apiKey);
   url.searchParams.set("limit", "10");
 
-  const res = await fetch(url.toString(), { signal: AbortSignal.timeout(6000) });
+  const res = await fetch(url.toString(), { signal: AbortSignal.timeout(4000) });
   if (!res.ok) return [];
 
   const data = (await res.json()) as {
@@ -264,17 +261,28 @@ async function searchHunter(domain: string): Promise<EmailContact[]> {
 /**
  * Trouve le site web d'une entreprise via Serper si pas fourni.
  */
+/** Simplifie le nom légal pour trouver le bon domaine (ex: "CAPGEMINI TECHNOLOGY SERVICES SAS" → "Capgemini"). */
+function simplifyCompanyName(nom: string): string {
+  return nom
+    .replace(/\b(SAS|SARL|SA|SNC|GIE|SASU|EURL|ETS|SCS|SCA|SE|NV|BV|LTD|LLC|GMBH|AG)\b/gi, "")
+    .replace(/\b(FRANCE|DIGITAL|SERVICES|SOLUTIONS|GROUPE|GROUP|HOLDING|INTERNATIONAL|EUROPE|GLOBAL)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ").slice(0, 2).join(" "); // Garder seulement les 2 premiers mots significatifs
+}
+
 async function findWebsite(nom: string, siren?: string): Promise<string | null> {
   const apiKey = process.env.SERPER_API_KEY?.trim();
   if (!apiKey) return null;
 
   try {
-    const query = nom ? `${nom} site officiel` : (siren ?? "");
+    const simplified = simplifyCompanyName(nom);
+    const query = nom ? `${simplified} site officiel recrutement` : (siren ?? "");
     const res = await fetch("https://google.serper.dev/search", {
       method: "POST",
       headers: { "X-API-KEY": apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({ q: query, gl: "fr", hl: "fr", num: 5 }),
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(3000),
     });
     if (!res.ok) return null;
 
