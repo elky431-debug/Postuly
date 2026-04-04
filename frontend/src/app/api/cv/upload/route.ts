@@ -2,18 +2,14 @@ import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  BACKEND_PROXY_MISSING_DETAIL,
+  getBackendProxyBase,
+} from "@/lib/backend-proxy-url";
 
 export const runtime = "nodejs";
 
 const MAX_MB = 10;
-
-function backendBase(): string {
-  return (
-    process.env.BACKEND_PROXY_URL?.replace(/\/$/, "") ||
-    process.env.INTERNAL_API_URL?.replace(/\/$/, "") ||
-    "http://127.0.0.1:8000"
-  );
-}
 
 function mediaType(
   file: File
@@ -129,11 +125,22 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const backend = getBackendProxyBase();
+  if (!backend) {
+    return NextResponse.json(
+      {
+        detail: `${BACKEND_PROXY_MISSING_DETAIL} Le fichier est bien enregistré (${cvUrl}) mais l’analyse IA nécessite FastAPI.`,
+        cv_url: cvUrl,
+      },
+      { status: 503 }
+    );
+  }
+
   const parseFd = new FormData();
   const blob = new Blob([bytes], { type: media });
   parseFd.append("file", blob, file.name || `cv${ext}`);
 
-  const parseRes = await fetch(`${backendBase()}/api/cv/parse-only`, {
+  const parseRes = await fetch(`${backend}/api/cv/parse-only`, {
     method: "POST",
     headers: { Authorization: `Bearer ${bearer}` },
     body: parseFd,

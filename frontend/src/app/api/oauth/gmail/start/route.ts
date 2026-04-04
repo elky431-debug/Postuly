@@ -11,7 +11,11 @@ export async function POST(req: NextRequest) {
   const redirectUri = process.env.GOOGLE_REDIRECT_URI?.trim();
   if (!clientId || !redirectUri) {
     return NextResponse.json(
-      { error: "GOOGLE_CLIENT_ID ou GOOGLE_REDIRECT_URI manquant dans .env.local" },
+      {
+        error:
+          "GOOGLE_CLIENT_ID ou GOOGLE_REDIRECT_URI manquant (Netlify → Environment variables ou .env.local). " +
+          "En prod, GOOGLE_REDIRECT_URI doit être https://TON_DOMAINE/api/oauth/gmail/callback (même URI dans Google Cloud).",
+      },
       { status: 503 }
     );
   }

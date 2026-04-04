@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/supabase/server";
+import {
+  BACKEND_PROXY_MISSING_DETAIL,
+  getBackendProxyBase,
+} from "@/lib/backend-proxy-url";
 
 /**
  * Régénère la lettre via FastAPI (même pipeline que la création de campagne).
@@ -16,8 +20,11 @@ export async function POST(
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  const BACKEND = (process.env.BACKEND_PROXY_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
-  const res = await fetch(`${BACKEND}/api/applications/${id}/regenerate-cover-letter`, {
+  const backend = getBackendProxyBase();
+  if (!backend) {
+    return NextResponse.json({ detail: BACKEND_PROXY_MISSING_DETAIL }, { status: 503 });
+  }
+  const res = await fetch(`${backend}/api/applications/${id}/regenerate-cover-letter`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

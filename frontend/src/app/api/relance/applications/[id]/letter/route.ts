@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, createSupabaseFromBearer } from "@/lib/supabase/server";
+import {
+  BACKEND_PROXY_MISSING_DETAIL,
+  getBackendProxyBase,
+} from "@/lib/backend-proxy-url";
 import type { RelanceApplicationUiStatus, RelanceLetterPayload } from "@/types/relance";
 
 function mapUiStatus(status: string): RelanceApplicationUiStatus {
@@ -88,8 +92,11 @@ export async function PUT(
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
 
-  const BACKEND = (process.env.BACKEND_PROXY_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
-  const res = await fetch(`${BACKEND}/api/applications/${id}`, {
+  const backend = getBackendProxyBase();
+  if (!backend) {
+    return NextResponse.json({ error: BACKEND_PROXY_MISSING_DETAIL }, { status: 503 });
+  }
+  const res = await fetch(`${backend}/api/applications/${id}`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,

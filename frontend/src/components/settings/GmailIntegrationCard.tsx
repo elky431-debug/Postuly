@@ -12,6 +12,7 @@ export function GmailIntegrationCard() {
   const gmailSuccess = searchParams.get("success") === "gmail_connected";
   const gmailError = searchParams.get("error");
   const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
   const [status, setStatus] = useState<{ connected: boolean; email: string | null } | null>(null);
 
   const loadStatus = useCallback(async () => {
@@ -39,23 +40,46 @@ export function GmailIntegrationCard() {
   }, [loadStatus, gmailSuccess]);
 
   async function handleConnectGmail() {
+    setConnectError(null);
     setConnecting(true);
     try {
       const supabase = createClient();
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
+      if (!session?.access_token) {
+        setConnectError("Session expirée ou absente : déconnecte-toi puis reconnecte-toi, puis réessaie.");
+        return;
+      }
       const res = await fetch("/api/oauth/gmail/start", {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-      const data = (await res.json()) as { url?: string; error?: string };
+      let data: { url?: string; error?: string } = {};
+      try {
+        data = (await res.json()) as { url?: string; error?: string };
+      } catch {
+        setConnectError(`Réponse serveur invalide (HTTP ${res.status}).`);
+        return;
+      }
       if (data.url) {
         window.location.href = data.url;
         return;
       }
-      console.error(data.error ?? "Démarrage OAuth impossible");
+      const apiErr = data.error ?? `Erreur ${res.status}`;
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const redirectHint =
+        origin &&
+        (apiErr.includes("GOOGLE_") ||
+          apiErr.includes("REDIRECT_URI") ||
+          apiErr.includes("INTERNAL_API_KEY"))
+          ? ` Sur Netlify, vérifie GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, INTERNAL_API_KEY et surtout GOOGLE_REDIRECT_URI=${origin}/api/oauth/gmail/callback (identique à la console Google), puis redéploie.`
+          : "";
+      setConnectError(apiErr + redirectHint);
+    } catch (e) {
+      setConnectError(
+        e instanceof Error ? e.message : "Impossible de joindre le serveur. Réessaie dans un instant."
+      );
     } finally {
       setConnecting(false);
     }
@@ -87,6 +111,12 @@ export function GmailIntegrationCard() {
       {gmailError && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {errorLabels[gmailError] ?? "Erreur lors de la connexion Gmail."}
+        </div>
+      )}
+
+      {connectError && (
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 whitespace-pre-wrap">
+          {connectError}
         </div>
       )}
 

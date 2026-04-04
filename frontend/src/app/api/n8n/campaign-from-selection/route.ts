@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  BACKEND_PROXY_MISSING_DETAIL,
+  getBackendProxyBase,
+} from "@/lib/backend-proxy-url";
+
 export const dynamic = "force-dynamic";
 
-function backendBase(): string {
-  return (
-    process.env.BACKEND_PROXY_URL?.replace(/\/$/, "") ||
-    process.env.BACKEND_INTERNAL_URL?.replace(/\/$/, "") ||
-    "http://127.0.0.1:8000"
-  );
-}
-
 export async function POST(req: NextRequest) {
-  const url = `${backendBase()}/api/campaigns/from-selection`;
+  const base = getBackendProxyBase();
+  if (!base) {
+    return NextResponse.json({ detail: BACKEND_PROXY_MISSING_DETAIL }, { status: 503 });
+  }
+  const url = `${base}/api/campaigns/from-selection`;
 
   const cookieHeader = req.headers.get("cookie") || "";
   const authHeader = req.headers.get("authorization");
@@ -63,12 +64,12 @@ export async function POST(req: NextRequest) {
     }
     const msg =
       e instanceof Error ? e.message : String(e);
+    const hint =
+      process.env.NODE_ENV === "development"
+        ? "Lance le backend : cd backend && bash run-dev.sh"
+        : "Vérifie que BACKEND_PROXY_URL est joignable en HTTPS depuis Internet.";
     return NextResponse.json(
-      {
-        detail:
-          `Impossible de joindre FastAPI sur ${backendBase()} (${msg}). ` +
-          "Lance le backend : cd backend && bash run-dev.sh",
-      },
+      { detail: `Impossible de joindre FastAPI sur ${base} (${msg}). ${hint}` },
       { status: 503 }
     );
   }

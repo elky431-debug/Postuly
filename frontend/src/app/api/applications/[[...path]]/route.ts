@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  BACKEND_PROXY_MISSING_DETAIL,
+  getBackendProxyBase,
+} from "@/lib/backend-proxy-url";
 
 /**
  * Proxy explicite vers FastAPI `/api/applications/*`.
  * Le rewrite global `next.config` ne garantit pas la transmission de `Authorization`
  * (d’où « header Authorization manquant » sur le Kanban alors que le client envoie le Bearer).
  */
-const BACKEND =
-  (process.env.BACKEND_PROXY_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
-
-function backendUrl(pathSegments: string[], search: string): string {
+function backendUrl(base: string, pathSegments: string[], search: string): string {
   if (pathSegments.length === 0) {
-    return `${BACKEND}/api/applications/${search}`;
+    return `${base}/api/applications/${search}`;
   }
-  return `${BACKEND}/api/applications/${pathSegments.join("/")}${search}`;
+  return `${base}/api/applications/${pathSegments.join("/")}${search}`;
 }
 
 async function proxyToBackend(
@@ -20,7 +21,11 @@ async function proxyToBackend(
   pathSegments: string[],
   method: "GET" | "PATCH" | "POST"
 ): Promise<NextResponse> {
-  const url = backendUrl(pathSegments, req.nextUrl.search);
+  const base = getBackendProxyBase();
+  if (!base) {
+    return NextResponse.json({ detail: BACKEND_PROXY_MISSING_DETAIL }, { status: 503 });
+  }
+  const url = backendUrl(base, pathSegments, req.nextUrl.search);
   const auth = req.headers.get("authorization");
   const headers: Record<string, string> = {
     Accept: "application/json",
