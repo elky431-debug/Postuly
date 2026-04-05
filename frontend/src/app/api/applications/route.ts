@@ -11,23 +11,17 @@ export async function GET(req: NextRequest) {
 
   const admin = createAdminClient();
   const { data, error } = await admin
-    .from("profiles")
-    .select("id, full_name, profile_type, cv_url, cv_parsed, cv_score, created_at")
-    .eq("id", user.id)
-    .maybeSingle();
+    .from("applications")
+    .select(`
+      id, campaign_id, company_id, contact_id, cover_letter,
+      status, sent_at, replied_at, notes, created_at,
+      company:companies(id, name, address, city, postal_code, naf_code, naf_label, size_range, website_url),
+      campaign:campaigns(job_title, contract_type, location)
+    `)
+    .eq("campaigns.user_id", user.id)
+    .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Auto-créer le profil s'il n'existe pas encore
-  if (!data) {
-    const { data: created, error: insertErr } = await admin
-      .from("profiles")
-      .insert({ id: user.id })
-      .select("id, full_name, profile_type, cv_url, cv_parsed, cv_score, created_at")
-      .single();
-    if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
-    return NextResponse.json(created);
-  }
-
-  return NextResponse.json(data);
+  return NextResponse.json(data ?? []);
 }
