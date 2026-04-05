@@ -118,6 +118,50 @@ function ApplyModal({ item, romeLabel, token, onClose, onApplied, romeCode }: Ap
     }
   }
 
+  // Via LBA API (recipientId dispo)
+  async function sendViaLba() {
+    const res = await fetch("/api/alternance/apply", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        recipientId: item.recipientId,
+        jobId:       item.id,
+        jobType:     "recruteur_lba",
+        siret:       item.siret || undefined,
+        companyName: item.name,
+        romeCode,
+        city:        item.address || undefined,
+        message:     letter,
+      }),
+    });
+    if (res.status === 409) { setDone(true); onApplied(item.id); return; }
+    const data = await res.json() as { ok?: boolean; error?: string };
+    if (!res.ok || !data.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+    setDone(true);
+    onApplied(item.id);
+  }
+
+  // Via Gmail (pas de recipientId — on cherche l'email via Hunter)
+  async function sendViaEmail() {
+    const res = await fetch("/api/alternance/apply-email", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        companyName: item.name,
+        siret:       item.siret || undefined,
+        website:     item.website || undefined,
+        romeCode,
+        city:        item.address || undefined,
+        message:     letter,
+      }),
+    });
+    if (res.status === 409) { setDone(true); onApplied(item.id); return; }
+    const data = await res.json() as { ok?: boolean; sentTo?: string; error?: string };
+    if (!res.ok || !data.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+    setDone(true);
+    onApplied(item.id);
+  }
+
   async function sendApplication() {
     if (!letter.trim()) {
       setError("Écris ou génère une lettre de motivation avant d'envoyer.");
@@ -126,43 +170,18 @@ function ApplyModal({ item, romeLabel, token, onClose, onApplied, romeCode }: Ap
     setBusy("send");
     setError(null);
     try {
-      const res = await fetch("/api/alternance/apply", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          recipientId: item.recipientId,
-          jobId:       item.id,
-          jobType:     "recruteur_lba",
-          siret:       item.siret || undefined,
-          companyName: item.name,
-          romeCode,
-          city:        item.address || undefined,
-          message:     letter,
-        }),
-      });
-
-      if (res.status === 409) {
-        setDone(true);
-        onApplied(item.id);
-        return;
+      if (item.recipientId) {
+        await sendViaLba();
+      } else {
+        await sendViaEmail();
       }
-
-      const data = await res.json() as { ok?: boolean; error?: string };
-      if (!res.ok || !data.ok) {
-        const msg = data.error ?? `HTTP ${res.status}`;
-        // Cas CV manquant → lien vers Mon CV
-        if (msg.toLowerCase().includes("cv")) {
-          setError("__cv_missing__");
-        } else {
-          throw new Error(msg);
-        }
-        return;
-      }
-
-      setDone(true);
-      onApplied(item.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur envoi");
+      const msg = err instanceof Error ? err.message : "Erreur envoi";
+      if (msg.toLowerCase().includes("cv")) {
+        setError("__cv_missing__");
+      } else {
+        setError(msg);
+      }
     } finally {
       setBusy(null);
     }
@@ -272,16 +291,21 @@ function ApplyModal({ item, romeLabel, token, onClose, onApplied, romeCode }: Ap
         ) : (
           <div className="flex flex-col gap-5 px-6 py-5">
 
-            {/* CV attaché */}
+            {/* Mode envoi */}
             <div className="flex items-center gap-2.5 rounded-xl bg-stone-50 px-3.5 py-3 ring-1 ring-stone-100">
               <FileText className="h-4 w-4 shrink-0 text-stone-400" strokeWidth={2} />
               <span className="flex-1 text-[12px] text-stone-500">
                 CV attaché automatiquement depuis ton profil
               </span>
-              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-600">
-                Auto
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${item.recipientId ? "bg-orange-100 text-orange-600" : "bg-blue-50 text-blue-600"}`}>
+                {item.recipientId ? "Via LBA" : "Via Gmail"}
               </span>
             </div>
+            {!item.recipientId && (
+              <p className="text-[11px] text-stone-400">
+                Cette entreprise n&apos;a pas de contact LBA — l&apos;envoi se fait par email direct via ton Gmail connecté.
+              </p>
+            )}
 
             {/* Lettre */}
             <div className="flex flex-col gap-2">
@@ -471,7 +495,7 @@ function RecruteurCard({
             <BookmarkCheck className="h-4 w-4" strokeWidth={2} />
             Candidature envoyée
           </div>
-        ) : item.recipientId ? (
+        ) : (
           <button
             type="button"
             onClick={() => onOpenModal(item)}
@@ -479,16 +503,7 @@ function RecruteurCard({
           >
             Postuler <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
-        ) : (item.applyUrl || item.website) ? (
-          <a
-            href={item.applyUrl || item.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 text-[12px] font-semibold text-white transition hover:bg-orange-600"
-          >
-            Postuler <ExternalLink className="h-3.5 w-3.5" strokeWidth={2.5} />
-          </a>
-        ) : null}
+        )}
         {(item.website || item.applyUrl) && (
           <a
             href={item.website || item.applyUrl}
