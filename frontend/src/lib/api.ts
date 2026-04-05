@@ -21,7 +21,9 @@ function isNextOnlyApiPath(path: string): boolean {
     path.startsWith("/api/cv/upload") ||
     path.startsWith("/api/cv/generate-from-form") ||
     path.startsWith("/api/relance/") ||
-    path.startsWith("/api/alternance/")
+    path.startsWith("/api/alternance/") ||
+    path.startsWith("/api/profiles/") ||
+    path.startsWith("/api/stripe/")
   );
 }
 
