@@ -269,8 +269,9 @@ function ApplyModal({ offre, onClose }: { offre: FTOffre; onClose: () => void })
 
 // ─── Carte offre ─────────────────────────────────────────────────────────────
 
-function OffreCard({ offre, onApply }: { offre: FTOffre; onApply: (o: FTOffre) => void }) {
+function OffreCard({ offre }: { offre: FTOffre; onApply?: (o: FTOffre) => void }) {
   const [expanded, setExpanded] = useState(false);
+  const applyUrl = offre.urlPostulation ?? offre.urlFranceTravail;
   const descPreview = offre.description.slice(0, 280).replace(/\n+/g, " ");
   const hasMore = offre.description.length > 280;
 
@@ -402,14 +403,15 @@ function OffreCard({ offre, onApply }: { offre: FTOffre; onApply: (o: FTOffre) =
           {expanded ? "Réduire" : "Voir les détails"}
         </button>
 
-        <button
-          type="button"
-          onClick={() => onApply(offre)}
+        <a
+          href={applyUrl ?? "#"}
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-semibold text-white hover:bg-orange-600 transition-colors"
         >
           <Zap className="h-3.5 w-3.5" />
-          Postuler rapidement
-        </button>
+          Postuler sur France Travail
+        </a>
       </div>
     </div>
   );
@@ -431,7 +433,6 @@ export function FranceTravailPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
-  const [applyOffre, setApplyOffre] = useState<FTOffre | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   // Filtre salaire côté client (le texte du salaire contient souvent "X XXX €")
@@ -485,7 +486,6 @@ export function FranceTravailPage() {
 
   return (
     <div className="min-h-screen bg-[#F7F6F3]">
-      {applyOffre && <ApplyModal offre={applyOffre} onClose={() => setApplyOffre(null)} />}
 
       {/* Search bar */}
       <div className="bg-white border-b border-stone-200 px-6 py-8">
@@ -572,7 +572,7 @@ export function FranceTravailPage() {
           <>
             <div className="space-y-4">
               {filteredOffres.map((offre) => (
-                <OffreCard key={offre.id} offre={offre} onApply={setApplyOffre} />
+                <OffreCard key={offre.id} offre={offre} />
               ))}
             </div>
             <div className="mt-8 flex items-center justify-center gap-3">
