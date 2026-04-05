@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, CreditCard, Loader2, Sparkles, X, Zap } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 // ─── Config plans ──────────────────────────────────────────────────────────────
 
-const PLANS = [
+const PLANS: { key: PlanKey; name: string; price: string; popular?: boolean; features: string[] }[] = [
   {
     key:      "starter",
     name:     "Starter",
@@ -29,13 +29,13 @@ const PLANS = [
     price:    "54,99 €",
     features: ["Tout Pro", "Envoi emails automatisé", "Sélections avancées", "Support prioritaire"],
   },
-] as const;
+];
 
 type PlanKey = "starter" | "pro" | "max";
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
-export default function AbonnementPage() {
+function AbonnementContent() {
   const searchParams = useSearchParams();
   const [token, setToken]       = useState("");
   const [currentPlan, setCurrentPlan] = useState<PlanKey | null>(null);
@@ -241,5 +241,19 @@ export default function AbonnementPage() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function AbonnementPage() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout>
+        <div className="flex justify-center py-16">
+          <Loader2 className="h-7 w-7 animate-spin text-orange-400" />
+        </div>
+      </DashboardLayout>
+    }>
+      <AbonnementContent />
+    </Suspense>
   );
 }
