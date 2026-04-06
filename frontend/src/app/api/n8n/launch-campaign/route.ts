@@ -211,7 +211,7 @@ async function postLaunchCampaign(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "NEXTJS_URL ou INTERNAL_API_KEY manquant dans .env.local (requis pour lancer l’envoi).",
+          "NEXTJS_URL ou INTERNAL_API_KEY manquant. En local : frontend/.env.local. En prod : Netlify → Environment variables (puis redéploiement).",
       },
       { status: 503 }
     );
