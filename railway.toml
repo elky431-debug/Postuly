@@ -1,0 +1,8 @@
+# Monorepo : sans ce fichier, Railway lance Railpack sur la racine → npm run build → Next (next: not found).
+# On force l’image FastAPI définie dans backend/Dockerfile.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.railway"
+
+[deploy]
+healthcheckPath = "/docs"

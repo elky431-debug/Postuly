@@ -138,15 +138,31 @@ async function parseErrorResponse(response: Response): Promise<string> {
     );
   }
   if (status === 502 || status === 503 || status === 504) {
+    if (process.env.NODE_ENV === "development") {
+      return (
+        "L’API FastAPI ne répond pas (port 8000). Lance : cd backend && bash run-dev.sh " +
+        "puis recharge la page."
+      );
+    }
     return (
-      "L’API FastAPI ne répond pas (port 8000). Lance : cd backend && bash run-dev.sh " +
-      "puis recharge la page."
+      "L’API backend ne répond pas ou est injoignable. Sur Netlify, vérifie BACKEND_URL " +
+      "(ou BACKEND_PROXY_URL) : URL HTTPS publique de FastAPI, joignable depuis Internet."
+    );
+  }
+  if (status === 404) {
+    if (raw.length > 0 && raw.length < 400 && !raw.trim().startsWith("<")) {
+      return raw;
+    }
+    return (
+      "Erreur HTTP 404 : la route n’existe pas sur le serveur contacté. En production, " +
+      "vérifie sur Netlify que BACKEND_URL (ou BACKEND_PROXY_URL) pointe vers l’origine HTTPS " +
+      "de ton FastAPI (pas l’URL du site Next.js), sans suffixe /api. Teste aussi /docs sur ce même hôte."
     );
   }
   if (raw.length > 0 && raw.length < 400 && !raw.trim().startsWith("<")) {
     return raw;
   }
-  return `Erreur HTTP ${status}. Si besoin, consulte les logs uvicorn (backend).`;
+  return `Erreur HTTP ${status}. En local, consulte les logs uvicorn ; en prod, vérifie BACKEND_URL et les logs du fournisseur d’hébergement.`;
 }
 
 async function apiFetch(

@@ -14,6 +14,8 @@ RUN pip install playwright && playwright install chromium --with-deps
 
 COPY . .
 
+# Railway injecte PORT ; en local Docker on garde 8000 par défaut.
+ENV PORT=8000
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT}
