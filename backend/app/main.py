@@ -102,6 +102,12 @@ app.include_router(diagnostic_router, prefix="/api/diagnostic", tags=["Diagnosti
 app.include_router(emails_router, prefix="/api/emails", tags=["Emails"])
 
 
+@app.get("/")
+async def root() -> dict[str, str]:
+    """Réponse minimale pour sondes éventuelles sur / (ex. plateformes d’hébergement)."""
+    return {"status": "ok", "service": "postuly-api"}
+
+
 @app.get("/api/health")
 async def health_check() -> dict[str, str]:
     return {"status": "ok", "service": "postuly-api"}

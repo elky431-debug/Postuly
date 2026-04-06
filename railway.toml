@@ -4,5 +4,5 @@
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile.railway"
 
-[deploy]
-healthcheckPath = "/api/health"
+# Pas de healthcheck HTTP : l’image Playwright + imports FastAPI peuvent dépasser le délai par défaut
+# et laisser le déploiement bloqué sur « service unavailable » alors que l’app finit par démarrer.
