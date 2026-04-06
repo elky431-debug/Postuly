@@ -4,5 +4,6 @@ import type { NextRequest } from "next/server";
 export function verifierCleInterne(req: NextRequest): boolean {
   const expected = process.env.INTERNAL_API_KEY?.trim();
   if (!expected) return false;
-  return req.headers.get("x-internal-key") === expected;
+  const got = req.headers.get("x-internal-key")?.trim() ?? "";
+  return got === expected;
 }
