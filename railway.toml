@@ -5,4 +5,4 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile.railway"
 
 [deploy]
-healthcheckPath = "/docs"
+healthcheckPath = "/api/health"

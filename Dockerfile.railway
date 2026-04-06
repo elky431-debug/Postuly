@@ -10,8 +10,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ .
 
-ENV PORT=8000
+# Écoute fixe sur 8000 : doit être le même que « Public networking → Port 8000 » sur Railway.
+# Si on utilisait $PORT tel quel, Railway injecte souvent 8080 → proxy vers 8000 = 502.
 EXPOSE 8000
 
-# Railway injecte souvent PORT ; si absent, 8000 (doit correspondre au port « Public networking »).
-CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
