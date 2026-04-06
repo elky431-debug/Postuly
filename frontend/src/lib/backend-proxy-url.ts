@@ -14,6 +14,19 @@ function isUnreachableFromHost(u: string): boolean {
 }
 
 /**
+ * Sans `https://`, `fetch()` lève « Failed to parse URL » (ex. seulement `xxx.up.railway.app`).
+ */
+function normalizeProxyBase(raw: string): string {
+  const u = raw.trim().replace(/\/$/, "");
+  if (!u) return u;
+  if (/^https?:\/\//i.test(u)) return u;
+  if (/^(127\.0\.0\.1|localhost)/i.test(u)) {
+    return `http://${u}`;
+  }
+  return `https://${u}`;
+}
+
+/**
  * En `next dev` (NODE_ENV=development) : fallback localhost si aucune variable.
  * En prod (Netlify, etc.) : uniquement des URLs explicites ; pas de localhost.
  */
@@ -30,7 +43,7 @@ export function getBackendProxyBase(): string | null {
     const u = raw?.trim().replace(/\/$/, "");
     if (!u) continue;
     if (!isDev && isUnreachableFromHost(u)) continue;
-    return u;
+    return normalizeProxyBase(u);
   }
 
   if (isDev) {
