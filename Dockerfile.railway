@@ -13,4 +13,5 @@ COPY backend/ .
 ENV PORT=8000
 EXPOSE 8000
 
-CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+# Railway injecte souvent PORT ; si absent, 8000 (doit correspondre au port « Public networking »).
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
